@@ -104,6 +104,11 @@ export const ZonasZipCodeMap = new Map<string, ZipCodeRange[]>([
     "san_luis_potosi",
     [{ zipcode_start: "78000", zipcode_end: "79997", group: "L" }],
   ],
+  //Investigar mejor opcion para estos casos
+  // [
+  //   "san_luispotosi",
+  //   [{ zipcode_start: "78000", zipcode_end: "79997", group: "L" }],
+  // ],
   ["sinaloa", [{ zipcode_start: "80000", zipcode_end: "82996", group: "H" }]],
   ["sonora", [{ zipcode_start: "83000", zipcode_end: "85994", group: "E" }]],
   ["tabasco", [{ zipcode_start: "86000", zipcode_end: "86998", group: "N" }]],

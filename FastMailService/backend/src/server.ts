@@ -163,6 +163,21 @@ function cotizar(sender: string, message: string, flujo: Flujo) {
   }
 }
 
+// Función auxiliar para limpiar el nombre del estado
+function limpiarEstado(estado: string): string {
+  return estado
+    .split(" ")
+    .join("_")
+    .toLowerCase() // Convertir a minúsculas
+    .replace(/á/g, "a") // Remover acentos
+    .replace(/é/g, "e")
+    .replace(/í/g, "i")
+    .replace(/ó/g, "o")
+    .replace(/ú/g, "u")
+    .replace(/ñ/g, "n")
+    .replace(/[^a-z0-9_]/g, ""); // Remover caracteres especiales
+}
+
 function crear_remitente(sender: string, message: string) {
   const datos = message.split(",").map((dato) => dato.trim());
 
@@ -367,55 +382,37 @@ function calcular_costos(sender: string) {
     sendErrorMessage(sender);
     return;
   }
+
   const paquetes = sesionCliente.paquetes;
   const remitente = sesionCliente.remitente;
   const destinatario = sesionCliente.destinatario;
 
-  console.log("remitente", remitente?.estado);
-  console.log(
-    `QUE ES ESTOOOOOOOO:   ${remitente?.estado.toLowerCase().replace(" ", "_")}`
-  );
+  const estado_remitente = limpiarEstado(`${remitente?.estado}`);
+  const estado_destinatario = limpiarEstado(`${destinatario?.estado}`);
 
   const ZonaZipCodeRemitente: ZipCodeRange[] | undefined = ZonasZipCodeMap.get(
-    `${remitente?.estado.toLowerCase().replace(" ", "_")}`
+    `${estado_remitente}`
   )?.filter(
     (zona) =>
       Number(zona.zipcode_start) <= Number(`${remitente?.codigoPostal}`) &&
       Number(zona.zipcode_end) >= Number(`${remitente?.codigoPostal}`)
   );
+
   const ZonaZipCodeDestinatario: ZipCodeRange[] | undefined =
-    ZonasZipCodeMap.get(
-      `${destinatario?.estado.toLowerCase().replace(" ", "_")}`
-    )?.filter(
+    ZonasZipCodeMap.get(`${estado_destinatario}`)?.filter(
       (zona) =>
         Number(zona.zipcode_start) <= Number(`${destinatario?.codigoPostal}`) &&
         Number(zona.zipcode_end) >= Number(`${destinatario?.codigoPostal}`)
     );
-
-  console.log("ZonaZipCodeRemitente", ZonaZipCodeRemitente);
-  console.log("ZonaZipCodeDestinatario", ZonaZipCodeDestinatario);
 
   if (!ZonaZipCodeRemitente || !ZonaZipCodeDestinatario) {
     sendErrorMessage(sender);
     return;
   }
 
-  if (
-    ZonaZipCodeDestinatario?.length === 0 ||
-    ZonaZipCodeRemitente?.length === 0
-  ) {
-    sendErrorMessage(sender);
-    return;
-  }
-
-  // Extract groups safely
   const groupRemitente: string = ZonaZipCodeRemitente[0].group;
   const groupDestinatario: string = ZonaZipCodeDestinatario[0].group;
 
-  console.log("groupRemitente", groupRemitente);
-  console.log("groupDestinatario", groupDestinatario);
-
-  // Lookup the shipping cost
   const ZonaEnvio: string | undefined =
     ZonasDeEnvio[groupRemitente]?.[groupDestinatario];
 
@@ -424,26 +421,39 @@ function calcular_costos(sender: string) {
     return;
   }
 
-  for (let paquete of paquetes) {
-    //Las tarifas pueden ser seleccionadas por cliente o solo por la empresa??
-    const costo_fedex_8_30 =
-      TarifaNacional_8_30.Paquetes[Math.ceil(paquete.peso)][Number(ZonaEnvio)];
-    const costo_fedex_10_30 =
-      TarifaNacional_10_30.Paquetes[Math.ceil(paquete.peso)][Number(ZonaEnvio)];
-    const costo_fedex_economico =
-      TarifaNacional_Economico.Paquetes[Math.ceil(paquete.peso)][
-        Number(ZonaEnvio)
-      ];
-    const costo_fedex_dia_siguiente =
-      TarifaNacional_Dia_Siguiente.Paquetes[Math.ceil(paquete.peso)][
-        Number(ZonaEnvio)
-      ];
+  let mensaje_costo = `Los paquetes tienen un costo de envío de:\n`;
 
-    console.log("costo_fedex_8_30", costo_fedex_8_30);
-    console.log("costo_fedex_10_30", costo_fedex_10_30);
-    console.log("costo_fedex_economico", costo_fedex_economico);
-    console.log("costo_fedex_dia_siguiente", costo_fedex_dia_siguiente);
+  for (let paquete of paquetes) {
+    const peso = Math.ceil(paquete.peso);
+    const costo_fedex_8_30 =
+      TarifaNacional_8_30.Paquetes[peso][Number(ZonaEnvio)];
+    const costo_fedex_10_30 =
+      TarifaNacional_10_30.Paquetes[peso][Number(ZonaEnvio)];
+    const costo_fedex_economico =
+      TarifaNacional_Economico.Paquetes[peso][Number(ZonaEnvio)];
+    const costo_fedex_dia_siguiente =
+      TarifaNacional_Dia_Siguiente.Paquetes[peso][Number(ZonaEnvio)];
+
+    mensaje_costo += `Paquete ${JSON.stringify(paquete)}: \n`;
+    mensaje_costo += `- Fedex 8:30: ${costo_fedex_8_30}\n`;
+    mensaje_costo += `- Fedex 10:30: ${costo_fedex_10_30}\n`;
+    mensaje_costo += `- Fedex económico: ${costo_fedex_economico}\n`;
+    mensaje_costo += `- Fedex día siguiente: ${costo_fedex_dia_siguiente}\n`;
   }
+
+  client.messages
+    .create({
+      body: mensaje_costo,
+      from: sandboxNumber,
+      to: sender,
+    })
+    .then((message) => {
+      console.log(`Mensaje de costo enviado: ${message.sid}`);
+      console.log(`Mensaje de costo enviado: ${message.body}`);
+    })
+    .catch((err) => {
+      console.error("Error enviando mensaje de costo:", err);
+    });
 }
 
 // Funciones auxiliares
