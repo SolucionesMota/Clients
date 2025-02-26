@@ -1,5 +1,7 @@
+import bcrypt from "bcrypt";
 import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
+import session from "express-session";
 import fs from "fs";
 import path from "path";
 import { client, sandboxNumber } from "../config/twilio-config";
@@ -11,26 +13,85 @@ import {
   ZonasDeEnvio,
   ZonasZipCodeMap,
 } from "../db/ZonasZipCode";
-import { Paquete, Person, ZipCodeRange } from "./types/types";
+import {
+  Cliente,
+  Envio,
+  Flujo,
+  Paquete,
+  UserSession,
+  ZipCodeRange,
+} from "./types/types";
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(
+  session({
+    secret: "SOME_SECRET_KEY",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
-interface Flujo {
-  paso: string;
-  subpaso?: string;
+const chatbotSesionesDeUsuario: { [key: string]: UserSession } = {};
+
+// Simulación de base de datos
+const users: { username: string; password: string }[] = [];
+
+// Extend the Express Request interface
+declare module "express-session" {
+  interface SessionData {
+    userId: any;
+  }
 }
-interface UserSession {
-  flujo: Flujo;
-  destinatario?: Person;
-  remitente?: Person;
-  paquetes?: Paquete[];
+
+// Middleware de autenticación
+function isAuthenticated(req: Request, res: Response, next: () => any) {
+  if (req.session.userId) {
+    return next(); // El usuario está autenticado, continuar con la siguiente función
+  }
+  res.status(401).send("No autorizado"); // El usuario no está autenticado
 }
 
-const sesionesDeUsuario: { [key: string]: UserSession } = {};
+// Ruta para registrar un nuevo usuario
+app.post("/register", async (req, res) => {
+  const { username, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  users.push({ username, password: hashedPassword });
+  res.status(201).send("Usuario registrado");
+});
 
-app.get("/", (req: Request, res: Response) => {
+// Ruta para iniciar sesión
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+  const user = users.find((u) => u.username === username);
+  if (user && (await bcrypt.compare(password, user.password))) {
+    // Declare userId property on session
+    (req.session as any).userId = user.username; // Guardar el ID de usuario en la sesión
+    res.send("Inicio de sesión exitoso");
+  } else {
+    res.status(401).send("Credenciales incorrectas");
+  }
+});
+
+// Ruta para cerrar sesión
+app.post("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).send("Error al cerrar sesión");
+    }
+    res.send("Sesión cerrada");
+  });
+});
+
+// Rutas protegidas
+app.get("/ruta-protegida", isAuthenticated, (req, res) => {
+  res.send(
+    "Esta es una ruta protegida, solo accesible para usuarios autenticados."
+  );
+});
+
+app.get("/", isAuthenticated, (req, res) => {
   console.log(`get request from ${req.query.From}`);
   res.send("Hello World");
 });
@@ -41,11 +102,11 @@ app.post("/chatbot", (req: Request, res: Response) => {
 
   console.log(`Mensaje recibido de ${cliente}: ${incomingMessage}`);
 
-  if (!sesionesDeUsuario[cliente]) {
-    sesionesDeUsuario[cliente] = { flujo: { paso: "bienvenida" } };
+  if (!chatbotSesionesDeUsuario[cliente]) {
+    chatbotSesionesDeUsuario[cliente] = { flujo: { paso: "bienvenida" } };
   }
 
-  const sesionCliente = sesionesDeUsuario[cliente];
+  const sesionCliente = chatbotSesionesDeUsuario[cliente];
 
   switch (sesionCliente.flujo.paso) {
     case "bienvenida":
@@ -135,7 +196,7 @@ function cotizar(sender: string, message: string, flujo: Flujo) {
   if (!flujo.subpaso) {
     flujo.subpaso = "creando_remitente";
   }
-  console.log(`Current subpaso: ${flujo.subpaso}`);
+  // console.log(`Current subpaso: ${flujo.subpaso}`);
 
   switch (flujo.subpaso) {
     case "creando_remitente":
@@ -148,13 +209,13 @@ function cotizar(sender: string, message: string, flujo: Flujo) {
       break;
     case "creando_paquetes":
       crear_paquetes(sender, message);
+      crear_envio(sender, message);
       calcular_costos(sender);
-      flujo.paso = "bienvenida";
-      flujo.subpaso = "";
+      flujo.subpaso = "eligiendo_tarifa";
       break;
-    // case "calculando_costos":
-    //   // calcular_costos(sender);
-    //   break;
+    case "eligiendo_tarifa":
+      // calcular_costos(sender);
+      break;
     //   console.log("Calling calcular_costos function");
     //   calcular_costos(sender);
     //   break;
@@ -184,15 +245,16 @@ function crear_remitente(sender: string, message: string) {
 
   if (datos.length === 6) {
     const [nombre, calle, codigoPostal, colonia, ciudad, estado] = datos;
-    const remitente: Person = {
+    const remitente: Cliente = {
       nombre,
       calle,
       codigoPostal,
       colonia,
       ciudad,
       estado,
+      celular: sender.split(":")[1],
     };
-    sesionesDeUsuario[sender].remitente = remitente;
+    chatbotSesionesDeUsuario[sender].remitente = remitente;
 
     console.log("Datos del remitente recibidos:", remitente);
     emular_post_db_general("remitente", remitente, "create");
@@ -241,15 +303,16 @@ function crear_destinatario(sender: string, message: string) {
     });
   } else {
     const [nombre, calle, codigoPostal, colonia, ciudad, estado] = datos;
-    const destinatario: Person = {
+    const destinatario: Cliente = {
       nombre,
       calle,
       codigoPostal,
       colonia,
       ciudad,
       estado,
+      celular: sender.split(":")[1],
     };
-    sesionesDeUsuario[sender].destinatario = destinatario;
+    chatbotSesionesDeUsuario[sender].destinatario = destinatario;
 
     console.log("Datos del destinatario recibidos:", destinatario);
     emular_post_db_general("destinatario", destinatario, "create");
@@ -279,14 +342,14 @@ function crear_destinatario(sender: string, message: string) {
 }
 
 function crear_paquetes(sender: string, message: string) {
-  const sesionCliente = sesionesDeUsuario[sender];
+  const sesionCliente = chatbotSesionesDeUsuario[sender];
 
   // Verificar si el mensaje contiene múltiples paquetes
   const paquetes = message.includes(";")
     ? message.split(";").map((dato) => dato.trim())
     : [message.trim()]; // Si no hay ";", se asume un solo paquete
 
-  console.log("Paquetes recibidos:", paquetes);
+  // console.log("Paquetes recibidos:", paquetes);
 
   let paquetesValidos = true;
 
@@ -306,20 +369,61 @@ function crear_paquetes(sender: string, message: string) {
   }
 }
 
+function crear_envio(sender: string, message: string) {
+  const sesionCliente = chatbotSesionesDeUsuario[sender];
+  // const envios: Envio[] = [];
+  const paquetes: Paquete[] | undefined = sesionCliente.paquetes;
+  const remitente = sesionCliente?.remitente;
+  const destinatario = sesionCliente?.destinatario;
+
+  if (!paquetes) {
+    console.log("No hay paquetes en la sesión");
+    sendErrorMessage(sender);
+    return;
+  }
+  if (!remitente) {
+    console.log("No hay remitente en la sesión");
+    sendErrorMessage(sender);
+    return;
+  }
+  if (!destinatario) {
+    console.log("No hay destinatario en la sesión");
+    sendErrorMessage(sender);
+    return;
+  }
+
+  // for (const paquete of paquetes) {
+  let envio: Envio = {} as Envio;
+  envio.remitente = remitente;
+  envio.destinatario = destinatario;
+  envio.paquetes = paquetes;
+  envio.tarifa = TarifaNacional_8_30;
+  envio.fechaEnvio = new Date();
+  envio.fechaEntrega = new Date();
+  envio.estado = "prospecto";
+  envio._id = "1";
+  console.log("Envio creado:", envio);
+  emular_post_db_general("envios", envio, "create");
+  // envios.push(envio);
+  // }
+
+  // Convertir los envíos a JSON para imprimirlos de manera legible
+}
+
 function guardarPaquetesEnSesion(
   paquetes: string[],
   sesionCliente: UserSession
 ) {
-  for (const paquete of paquetes) {
-    emular_post_db_general(
-      "paquetes",
-      {
-        remitente: JSON.stringify(sesionCliente.remitente),
-        paquete,
-      },
-      "create"
-    );
-  }
+  // for (const paquete of paquetes) {
+  //   emular_post_db_general(
+  //     "paquetes",
+  //     {
+  //       // remitente: JSON.stringify(sesionCliente.remitente),
+  //       paquete,
+  //     },
+  //     "create"
+  //   );
+  // }
   sesionCliente.paquetes = paquetes.map((paquete) => {
     const [alto, ancho, largo, peso] = paquete
       .split(",")
@@ -377,7 +481,7 @@ function solicitarReenvioPaquetes(sender: string) {
 }
 
 function calcular_costos(sender: string) {
-  const sesionCliente = sesionesDeUsuario[sender];
+  const sesionCliente = chatbotSesionesDeUsuario[sender];
   if (!sesionCliente.paquetes) {
     console.log("No hay paquetes en la sesión");
     sendErrorMessage(sender);
@@ -422,25 +526,39 @@ function calcular_costos(sender: string) {
     return;
   }
 
-  let mensaje_costo = `Los paquetes tienen un costo de envío de:\n`;
+  let mensaje_costo = `Tenemos las siguientes tarifas:\n`;
+
+  let mensaje_costo_8_30 = `1. Bajo la tarifa de Fedex 8:30, cada paquete tiene un costo de:\n`;
+  let mensaje_costo_10_30 = `2. Bajo la tarifa de Fedex 10:30, el costo de envío es de:\n`;
+  let mensaje_costo_economico = `3. Bajo la tarifa de Fedex económico, el costo de envío es de:\n`;
+  let mensaje_costo_dia_siguiente = `4. Bajo la tarifa de Fedex día siguiente, el costo de envío es de:\n`;
 
   for (let paquete of paquetes) {
     const peso = Math.ceil(paquete.peso);
     const costo_fedex_8_30 =
       TarifaNacional_8_30.Paquetes[peso][Number(ZonaEnvio)];
+    mensaje_costo_8_30 += `Paquete ${JSON.stringify(paquete)}: \n`;
+    mensaje_costo_8_30 += `- ${costo_fedex_8_30}\n`;
+    paquete.costo = costo_fedex_8_30;
+
     const costo_fedex_10_30 =
       TarifaNacional_10_30.Paquetes[peso][Number(ZonaEnvio)];
+    mensaje_costo_10_30 += `Paquete ${JSON.stringify(paquete)}: \n`;
+    mensaje_costo_10_30 += `- ${costo_fedex_10_30}\n`;
+    paquete.costo = costo_fedex_10_30;
     const costo_fedex_economico =
       TarifaNacional_Economico.Paquetes[peso][Number(ZonaEnvio)];
+    mensaje_costo_economico += `Paquete ${JSON.stringify(paquete)}: \n`;
+    mensaje_costo_economico += `- ${costo_fedex_economico}\n`;
+    paquete.costo = costo_fedex_economico;
+
     const costo_fedex_dia_siguiente =
       TarifaNacional_Dia_Siguiente.Paquetes[peso][Number(ZonaEnvio)];
-
-    mensaje_costo += `Paquete ${JSON.stringify(paquete)}: \n`;
-    mensaje_costo += `- Fedex 8:30: ${costo_fedex_8_30}\n`;
-    mensaje_costo += `- Fedex 10:30: ${costo_fedex_10_30}\n`;
-    mensaje_costo += `- Fedex económico: ${costo_fedex_economico}\n`;
-    mensaje_costo += `- Fedex día siguiente: ${costo_fedex_dia_siguiente}\n`;
+    mensaje_costo_dia_siguiente += `Paquete ${JSON.stringify(paquete)}: \n`;
+    mensaje_costo_dia_siguiente += `- ${costo_fedex_dia_siguiente}\n`;
+    paquete.costo = costo_fedex_dia_siguiente;
   }
+  mensaje_costo += `\n${mensaje_costo_8_30}\n${mensaje_costo_10_30}\n${mensaje_costo_economico}\n${mensaje_costo_dia_siguiente}\n Elige una de las tarifas para continuar`;
 
   client.messages
     .create({
@@ -455,6 +573,29 @@ function calcular_costos(sender: string) {
     .catch((err) => {
       console.error("Error enviando mensaje de costo:", err);
     });
+}
+
+function elegir_tarifa(sender: string, message: string) {
+  const sesionCliente = chatbotSesionesDeUsuario[sender];
+  const tarifa_seleccionada = message;
+  switch (tarifa_seleccionada) {
+    case "1":
+    case "8:30":
+      sesionCliente.tarifa = TarifaNacional_8_30;
+      break;
+    case "2":
+    case "10:30":
+      sesionCliente.tarifa = TarifaNacional_10_30;
+      break;
+    case "3":
+    case "economico":
+      sesionCliente.tarifa = TarifaNacional_Economico;
+      break;
+    case "4":
+    case "dia_siguiente":
+      sesionCliente.tarifa = TarifaNacional_Dia_Siguiente;
+      break;
+  }
 }
 
 // Funciones auxiliares
@@ -475,6 +616,47 @@ function sendErrorMessage(sender: string) {
     });
 }
 
+function identifyObjectType(data: any): string {
+  if ("nombre" in data && "calle" in data && "codigoPostal" in data) {
+    return "Cliente";
+  } else if (
+    "remitente" in data &&
+    "destinatario" in data &&
+    "paquetes" in data
+  ) {
+    return "Envio";
+  } else if (
+    "alto" in data &&
+    "ancho" in data &&
+    "largo" in data &&
+    "peso" in data
+  ) {
+    return "Paquete";
+  }
+  return "Unknown";
+}
+
+function formatDataForCSV(data: any, type: string): string {
+  switch (type) {
+    case "Cliente":
+      return `${data.nombre},${data.calle},${data.codigoPostal},${data.colonia},${data.ciudad},${data.estado},${data.celular}`;
+    case "Envio":
+      return `Remitente: ${formatDataForCSV(
+        data.remitente,
+        "Cliente"
+      )}, Destinatario: ${formatDataForCSV(
+        data.destinatario,
+        "Cliente"
+      )}, Paquetes: ${data.paquetes
+        .map((p: any) => formatDataForCSV(p, "Paquete"))
+        .join("; ")}`;
+    case "Paquete":
+      return `${data.alto}cm,${data.ancho}cm,${data.largo}cm,${data.peso}kg`;
+    default:
+      return JSON.stringify(data);
+  }
+}
+
 function emular_post_db_general(
   some_entity_name: string,
   some_entity_data: any,
@@ -488,9 +670,10 @@ function emular_post_db_general(
     "con datos",
     some_entity_data
   );
-  // New code to save data into a CSV file
+
   const filePath = path.join(__dirname, "../db", `${some_entity_name}.csv`);
-  const data = Object.values(some_entity_data).join(",") + "\n"; // Convert object values to CSV format
+  const objectType = identifyObjectType(some_entity_data);
+  const data = formatDataForCSV(some_entity_data, objectType) + "\n";
 
   fs.appendFile(filePath, data, (err) => {
     if (err) {

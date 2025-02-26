@@ -1,10 +1,34 @@
-export interface Person {
+export interface Cliente {
   nombre: string;
   calle: string;
   codigoPostal: string;
   colonia: string;
   ciudad: string;
   estado: string;
+  celular: string;
+}
+
+export interface Flujo {
+  paso: string;
+  subpaso?: string;
+}
+export interface UserSession {
+  flujo: Flujo;
+  destinatario?: Cliente;
+  remitente?: Cliente;
+  paquetes?: Paquete[];
+  tarifa?: Tarifa;
+}
+
+export interface Envio {
+  remitente: Cliente;
+  destinatario: Cliente;
+  paquetes: Paquete[];
+  tarifa: Tarifa;
+  fechaEnvio: Date;
+  fechaEntrega: Date;
+  estado: string;
+  _id: string;
 }
 
 export interface Paquete {
@@ -12,6 +36,7 @@ export interface Paquete {
   ancho: number;
   largo: number;
   peso: number;
+  costo: number;
 }
 
 export interface ZipCodeRange {
