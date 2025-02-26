@@ -1,2 +1,3 @@
 FastMailService/backend/node_modules
+FastMailService/backend/bd/*.csv
 FastMailService/.env

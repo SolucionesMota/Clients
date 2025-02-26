@@ -149,7 +149,8 @@ function cotizar(sender: string, message: string, flujo: Flujo) {
     case "creando_paquetes":
       crear_paquetes(sender, message);
       calcular_costos(sender);
-      // flujo.subpaso = "calculando_costos";
+      flujo.paso = "bienvenida";
+      flujo.subpaso = "";
       break;
     // case "calculando_costos":
     //   // calcular_costos(sender);
