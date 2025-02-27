@@ -7,7 +7,6 @@ export interface Cliente {
   estado: string;
   celular: string;
 }
-
 export interface Flujo {
   paso: string;
   subpaso?: string;
@@ -17,9 +16,9 @@ export interface UserSession {
   destinatario?: Cliente;
   remitente?: Cliente;
   paquetes?: Paquete[];
-  tarifa?: Tarifa;
+  ultimo_envio?: Envio;
+  envios?: Envio[];
 }
-
 export interface Envio {
   remitente: Cliente;
   destinatario: Cliente;
@@ -30,7 +29,6 @@ export interface Envio {
   estado: string;
   _id: string;
 }
-
 export interface Paquete {
   alto: number;
   ancho: number;
@@ -38,17 +36,14 @@ export interface Paquete {
   peso: number;
   costo: number;
 }
-
 export interface ZipCodeRange {
   zipcode_start: string;
   zipcode_end: string;
   group: string;
 }
-
 export interface EstadoZipCodeZone {
   [key: string]: ZipCodeRange[];
 }
-
 export interface Tarifa {
   sobres: Record<number, number>; // Zona -> Precio
   Paquetes: Record<number, Record<number, number>>; // Peso -> Zona -> Precio
