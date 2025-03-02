@@ -1,0 +1,35 @@
+<project>
+    <name>FastMailService</name>
+    <description>Servicio de chatbot para envíos y cotizaciones</description>
+    <components>
+        <component>
+            <name>chatbotService.ts</name>
+            <type>Service</type>
+            <description>Lógica del chatbot</description>
+            <functions>
+                <function>processChatbotMessageLogic</function>
+                <function>handleBienvenida</function>
+                <function>handleCotizar</function>
+                <function>calcular_costos</function>
+            </functions>
+        </component>
+        <component>
+            <name>types.ts</name>
+            <type>Type Definitions</type>
+            <description>Definiciones de tipos utilizados en el proyecto</description>
+            <interfaces>
+                <interface>Paquete</interface>
+            </interfaces>
+        </component>
+        <component>
+            <name>ZonasZipCode.ts</name>
+            <type>Database</type>
+            <description>Mapa de códigos postales por estado</description>
+        </component>
+        <component>
+            <name>FastMailService.postman_collection.json</name>
+            <type>API Collection</type>
+            <description>Definiciones de las API utilizadas por el chatbot</description>
+        </component>
+    </components>
+</project>

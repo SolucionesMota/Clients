@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { client, sandboxNumber } from "../config/twilio-config";
 import { TarifaNacional_8_30, ZonasZipCodeMap } from "../db/ZonasZipCode";
 import {
@@ -27,12 +29,15 @@ export function processChatbotMessageLogic(
   switch (sesionCliente.flujo.paso) {
     case "bienvenida":
       handleBienvenida(cliente);
+      sesionCliente.flujo.paso = "eligiendo_servicio";
       break;
     case "eligiendo_servicio":
       handleEligiendoServicio(cliente, incomingMessage);
+      sesionCliente.flujo.paso = "cotizar";
       break;
     case "cotizar":
       handleCotizar(cliente, incomingMessage, sesionCliente.flujo);
+      // sesionCliente.flujo.paso = "confirmar_envio";
       break;
     default:
       sendMessage(cliente, "No entiendo tu mensaje", "Mensaje no entendido");
@@ -40,7 +45,7 @@ export function processChatbotMessageLogic(
   }
 }
 
-//Pasos de la conversación
+//Pasos de la conversación principal
 
 function handleBienvenida(sender: string) {
   const mensajeBienvenida = `¡Hola! 😊 ¿Cómo puedo ayudarte hoy? Por favor elige una de las siguientes opciones:
@@ -63,6 +68,7 @@ function handleCotizar(sender: string, message: string, flujo: Flujo) {
     flujo.subpaso = "creando_remitente";
   }
 
+  console.log(`Flujo actual: ${flujo.subpaso}\n`);
   switch (flujo.subpaso) {
     case "creando_remitente":
       crear_remitente(sender, message);
@@ -74,22 +80,39 @@ function handleCotizar(sender: string, message: string, flujo: Flujo) {
       break;
     case "creando_paquetes":
       crear_paquetes(sender, message);
+      console.log("Paquetes creados");
       calcular_costos(sender);
+      console.log("Costos calculados");
       crear_envio(sender, message);
-      flujo.subpaso = "eligiendo_tarifa";
-      break;
-    case "eligiendo_tarifa":
-      // elegir_tarifa(sender, message);
-      flujo.subpaso = "confirmar_envio";
-      break;
-    case "confirmar_envio":
-      crear_envio(sender, message);
-      break;
+      console.log("Envio creado");
+      flujo.subpaso = "calculando_costos";
+      return;
+    // case "calculando_costos":
+    //   calcular_costos(sender);
+    //   flujo.subpaso = "creando_envio";
+    //   return;
+    // case "creando_envio":
+    //   crear_envio(sender, message);
+    //   flujo.subpaso = "eligiendo_tarifa";
+    //   break;
+    // case "eligiendo_tarifa":
+    //   // elegir_tarifa(sender, message);
+    //   flujo.subpaso = "confirmar_envio";
+    //   break;
+    // case "confirmar_envio":
+    //   crear_envio(sender, message);
+    //   break;
     default:
-      sendMessage(sender, "No entiendo tu mensaje", "Mensaje no entendido");
+      sendMessage(
+        sender,
+        "Lo siento, no entiendo tu mensaje. Por favor intenta de nuevo.",
+        "Mensaje no entendido"
+      );
       break;
   }
 }
+
+//Sub pasos cotizar
 
 function getServiceResponseMessage(choice: string): string {
   switch (choice.toLowerCase()) {
@@ -154,37 +177,17 @@ function crear_remitente(sender: string, message: string) {
     chatbotSesionesDeUsuario[sender].remitente = remitente;
 
     console.log("Datos del remitente recibidos:", remitente);
-    // emular_post_db_general("remitente", remitente, "create");
+    emular_post("remitente", remitente);
 
-    client.messages
-      .create({
-        body: `Por favor, ingresa los datos del destinatario separados por comas en el siguiente orden:
-      Nombre, Calle, Código Postal, colonia, Ciudad, Estado`,
-        from: sandboxNumber,
-        to: sender,
-      })
-      .then((message) => {
-        console.log(`Datos recibidos: ${message.sid}`);
-        console.log(
-          `Mensaje enviado: Por favor, ingresa los datos del destinatario separados por comas en el siguiente orden: Nombre, Calle, Código Postal, colonia, Ciudad, Estado`
-        );
-      })
-      .catch((err) => console.error("Error enviando confirmación:", err));
+    sendMessage(
+      sender,
+      "Por favor, ingresa los datos del destinatario separados por comas en el siguiente orden: Nombre, Calle, Código Postal, colonia, Ciudad, Estado",
+      "Solicitando datos del destinatario"
+    );
   } else {
     const errorMessage = `Los datos del remitente no están en el formato correcto. Por favor, ingresa los datos nuevamente siguiendo el orden indicado:
       Nombre, Calle, Código Postal, colonia, Ciudad, Estado`;
-    client.messages
-      .create({
-        body: errorMessage,
-        from: sandboxNumber,
-        to: sender,
-      })
-      .then((message) =>
-        console.log(`Solicitando datos nuevamente: ${message.sid}`)
-      )
-      .catch((err) =>
-        console.error("Error solicitando datos nuevamente:", err)
-      );
+    sendMessage(sender, errorMessage, "Error al solicitar datos del remitente");
   }
 }
 
@@ -193,11 +196,11 @@ function crear_destinatario(sender: string, message: string) {
   if (datos.length != 6) {
     const errorMessage = `Los datos del destinatario no están en el formato correcto. Por favor, ingresa los datos nuevamente siguiendo el orden indicado:
       Nombre, Calle, Código Postal, colonia, Ciudad, Estado`;
-    client.messages.create({
-      body: errorMessage,
-      from: sandboxNumber,
-      to: sender,
-    });
+    sendMessage(
+      sender,
+      errorMessage,
+      "Error al solicitar datos del destinatario"
+    );
   } else {
     const [nombre, calle, codigoPostal, colonia, ciudad, estado] = datos;
     const destinatario: Cliente = {
@@ -212,29 +215,13 @@ function crear_destinatario(sender: string, message: string) {
     chatbotSesionesDeUsuario[sender].destinatario = destinatario;
 
     console.log("Datos del destinatario recibidos:", destinatario);
-    // emular_post_db_general("destinatario", destinatario, "create");
+    emular_post("destinatario", destinatario);
 
-    client.messages
-      .create({
-        body: `Ahora proporciona la siguiente información de tus paquetes en el siguiente orden.
-      Alto, ancho, largo, peso.
-      Los datos deben incluir sus unidades cm y kg.
-      Para darte una cotización adecuada por favor proporciona las dimensiones y peso exactos.
-      De lo contrario solo podemos proporcionar una aproximación del costo y éste puede ser actualizado cuando visites la sucursal.
-      Si es más de un paquete, separa cada paquete con un punto y coma ";"
-      EJEMPLO Dos paquetes:
-      10cm, 15cm, 15cm, 0.5kg;
-      6.2cm, 12cm, 18.5cm, 5.3kg`,
-        from: sandboxNumber,
-        to: sender,
-      })
-      .then((message) => {
-        console.log(`Confirmación enviada: ${message.sid}`);
-        console.log(
-          `Mensaje enviado: Ahora proporciona la siguiente información de tus paquetes en el siguiente orden. Alto, ancho, largo, peso. Los datos deben incluir sus unidades cm y kg. Para darte una cotización adecuada por favor proporciona las dimensiones y peso exactos. De lo contrario solo podemos proporcionar una aproximación del costo y éste puede ser actualizado cuando visites la sucursal. Si es más de un paquete, separa cada paquete con un punto y coma ";". EJEMPLO Dos paquetes: 10cm, 15cm, 15cm, 0.5kg; 6.2cm, 12cm, 18.5cm, 5.3kg`
-        );
-      })
-      .catch((err) => console.error("Error enviando confirmación:", err));
+    sendMessage(
+      sender,
+      'Ahora proporciona la siguiente información de tus paquetes en el siguiente orden. Alto, ancho, largo, peso. Los datos deben incluir sus unidades cm y kg. Para darte una cotización adecuada por favor proporciona las dimensiones y peso exactos. De lo contrario solo podemos proporcionar una aproximación del costo y éste puede ser actualizado cuando visites la sucursal. Si es más de un paquete, separa cada paquete con un punto y coma ";". EJEMPLO Dos paquetes: 10cm, 15cm, 15cm, 0.5kg; 6.2cm, 12cm, 18.5cm, 5.3kg',
+      "Solicitando información de paquetes"
+    );
   }
 }
 
@@ -247,11 +234,10 @@ function crear_paquetes(sender: string, message: string) {
     : [message.trim()]; // Si no hay ";", se asume un solo paquete
 
   console.log("Paquetes recibidos:", paquetes);
-  ``;
-
-  let paquetesValidos = true;
   // if (paquetesValidos) {
   guardarPaquetesEnSesion(paquetes, sesionCliente);
+  // const tarifas = obtenerTarifas(paquetes);
+  // enviarConfirmacionPaquetes(paquetes, sender);
   // enviarConfirmacionPaquetes(paquetes, sender);
   // } else {
 
@@ -305,7 +291,7 @@ function crear_envio(sender: string, message: string) {
   envio.estado = "prospecto";
   envio._id = "1";
   console.log("Envio creado:", envio);
-  // emular_post_db_general("envios", envio, "create");
+  emular_post("envios", envio);
   sesionCliente.ultimo_envio = envio;
   envios.push(envio);
   sesionCliente.envios = envios;
@@ -337,51 +323,6 @@ function guardarPaquetesEnSesion(
 
     return { alto, ancho, largo, peso } as Paquete;
   });
-}
-
-function enviarConfirmacionPaquetes(paquetes: string[], sender: string) {
-  client.messages
-    .create({
-      body: `Hemos recibido los siguientes paquetes: ${JSON.stringify(
-        paquetes
-      )}\n. En un momento te proporcionaremos el costo de envío.`,
-      from: sandboxNumber,
-      to: sender,
-    })
-    .then((message) => {
-      console.log(`Mensaje de costo enviado: ${message.sid}`);
-      console.log(
-        `Mensaje enviado: Hemos recibido los siguientes paquetes: ${JSON.stringify(
-          paquetes
-        )}\n. En un momento te proporcionaremos el costo de envío.`
-      );
-    })
-    // .then((message) => {
-    // console.log(`Calculando costo de envio: ${message.sid}`);
-    // Avanzar al siguiente subpaso
-    // sesionesDeUsuario[sender].flujo.subpaso = "creando_destinatario";
-    // })
-    .catch((err) => {
-      console.error("Error solicitando datos del destinatario:", err);
-    });
-}
-
-function solicitarReenvioPaquetes(sender: string) {
-  client.messages
-    .create({
-      body: `Por favor, verifica el formato de los paquetes y envíalos nuevamente.\n
-    Ejemplo de formato:\n
-    10cm, 15cm, 15cm, 0.5kg\n
-    6.2cm, 12cm, 18.5cm, 5.3kg`,
-      from: sandboxNumber,
-      to: sender,
-    })
-    .then((message) => {
-      console.log(`Solicitando datos nuevamente: ${message.sid}`);
-    })
-    .catch((err) => {
-      console.error("Error solicitando datos nuevamente:", err);
-    });
 }
 
 function calcular_costos(sender: string) {
@@ -420,4 +361,50 @@ function calcular_costos(sender: string) {
 
   console.log("ZonaZipCodeRemitente:", ZonaZipCodeRemitente);
   console.log("ZonaZipCodeDestinatario:", ZonaZipCodeDestinatario);
+}
+
+function obtenerTarifas(paquetes: string[]) {
+  const tarifas = [];
+  for (const paquete of paquetes) {
+    const [alto, ancho, largo, peso] = paquete
+      .split(",")
+      .map((dato) =>
+        parseFloat(dato.replace("cm", "").replace("kg", "").trim())
+      );
+  }
+}
+
+//Mensajes
+function enviarConfirmacionPaquetes(paquetes: string[], sender: string) {
+  sendMessage(
+    sender,
+    `Hemos recibido los siguientes paquetes: ${JSON.stringify(
+      paquetes
+    )}\n. Estos son las tarifas dispónibles para el envío. Por favor elige la que mas te convenga`,
+    "Confirmación de paquetes enviados"
+  );
+}
+
+function solicitarReenvioPaquetes(sender: string) {
+  sendMessage(
+    sender,
+    `Por favor, verifica el formato de los paquetes y envíalos nuevamente.\n
+    Ejemplo de formato:\n
+    10cm, 15cm, 15cm, 0.5kg\n
+    6.2cm, 12cm, 18.5cm, 5.3kg`,
+    "Solicitando reenvío de paquetes"
+  );
+}
+
+function emular_post(nombreObjeto: string, datos: any) {
+  const filePath = path.join(__dirname, `${nombreObjeto}.csv`);
+  const csvData = Object.values(datos).join(",") + "\n";
+
+  fs.appendFile(filePath, csvData, (err) => {
+    if (err) {
+      console.error(`Error writing to ${nombreObjeto}.csv:`, err);
+    } else {
+      console.log(`Data appended to ${nombreObjeto}.csv`);
+    }
+  });
 }

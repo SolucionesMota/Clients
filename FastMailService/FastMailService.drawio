@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile>
+  <diagram name="Arquitectura" id="0">
+    <mxGraphModel dx="877" dy="508" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <mxCell id="Server" value="Server&#xa;Servidor que maneja las solicitudes del chatbot" style="rounded=1;whiteSpace=wrap;fillColor=#D5E8D4;" vertex="1" parent="1">
+          <mxGeometry x="100" y="100" width="160" height="80" as="geometry" />
+        </mxCell>
+    
+
+        <mxCell id="Chatbot Service" value="Chatbot Service&#xa;Lógica del chatbot que procesa los mensajes" style="rounded=1;whiteSpace=wrap;fillColor=#D5E8D4;" vertex="1" parent="1">
+          <mxGeometry x="100" y="250" width="160" height="80" as="geometry" />
+        </mxCell>
+    
+
+        <mxCell id="Database" value="Database&#xa;Almacena información sobre zonas y tarifas" style="rounded=1;whiteSpace=wrap;fillColor=#D5E8D4;" vertex="1" parent="1">
+          <mxGeometry x="100" y="400" width="160" height="80" as="geometry" />
+        </mxCell>
+    
+
+        <mxCell id="Types" value="Types&#xa;Definiciones de tipos utilizados en el proyecto" style="rounded=1;whiteSpace=wrap;fillColor=#D5E8D4;" vertex="1" parent="1">
+          <mxGeometry x="100" y="550" width="160" height="80" as="geometry" />
+        </mxCell>
+    
+
+        <mxCell id="Postman Collection" value="Postman Collection&#xa;Definiciones de las API utilizadas por el chatbot" style="rounded=1;whiteSpace=wrap;fillColor=#D5E8D4;" vertex="1" parent="1">
+          <mxGeometry x="100" y="700" width="160" height="80" as="geometry" />
+        </mxCell>
+    
+        
+        <mxCell id="100" value="Envía mensajes entrantes al servicio del chatbot para su procesamiento" style="edgeStyle=elbowEdgeStyle;rounded=1;strokeColor=#000000;" edge="1" parent="1" source="Server" target="Chatbot Service">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+    
+
+        <mxCell id="101" value="Consulta información sobre zonas y tarifas para calcular costos" style="edgeStyle=elbowEdgeStyle;rounded=1;strokeColor=#000000;" edge="1" parent="1" source="Chatbot Service" target="Database">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+    
+
+        <mxCell id="102" value="Utiliza definiciones de tipos para estructurar datos" style="edgeStyle=elbowEdgeStyle;rounded=1;strokeColor=#000000;" edge="1" parent="1" source="Chatbot Service" target="Types">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+    
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
