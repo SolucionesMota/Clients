@@ -1,0 +1,28 @@
+Alejandro Mota, Norte 16 #48, 94320, centro, Orizaba, Veracruz
+Ivan Tepole, Insurgentes 945, 94000, Revolución, Xalapa, Veracruz
+30cm, 20cm, 15cm, 2.5kg
+
+Juan Pérez, Zacatengo esquina, Chicanel 102A, 86019, Villahermosa, Tabasco
+María López, Calle Francisco de Ayza 1454-1502, Progreso, 44730, Guadalajara, Jalisco
+50cm, 40cm, 30cm, 5kg;
+25cm, 15cm, 10cm, 1.2kg
+
+Empresa XYZ, Calle Doctor Julián Villarreal Sur 240 B- Desp. 8 WASHINGTON ORIENTE CRUZ JULIAN VILLARREAL, Centro, 64000, Monterrey, Nuevo Leon
+Luis Ramírez, Calle 38 471-477, Jesús Carranza, 97109, Mérida, Yucatan
+60cm, 50cm, 40cm, 8kg
+35cm, 25cm, 20cm, 3.5kg
+40cm, 30cm, 25cm, 4.2kg
+70cm, 60cm, 50cm, 12kg
+
+Laura Méndez, Av. Independencia 789, 91700, Centro, Veracruz, Veracruz
+Tienda ABC, Blvd. Kukulcán Km 12, 77500, Zona Hotelera, Cancún, Quintana Roo
+20cm, 15cm, 10cm, 1kg
+45cm, 35cm, 25cm, 6kg
+
+Carlos Herrera, Calle 5 Sur 230, 72000, Centro, Puebla, Puebla
+Sofía Gutiérrez, Av. Revolución 980, 22000, Zona Centro, Tijuana, Baja California
+50cm, 40cm, 35cm, 7.5kg
+25cm, 20cm, 15cm, 2.8kg
+30cm, 25cm, 20cm, 3.6kg
+55cm, 45cm, 40cm, 9kg
+40cm, 30cm, 25cm, 4.5kg

@@ -75,9 +75,9 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/chatbot",
+									"raw": "{{API_URL}}/chatbot",
 									"host": [
-										"{{baseUrl}}"
+										"{{API_URL}}"
 									],
 									"path": [
 										"chatbot"
@@ -101,9 +101,9 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/chatbot",
+									"raw": "{{API_URL}}/chatbot",
 									"host": [
-										"{{baseUrl}}"
+										"{{API_URL}}"
 									],
 									"path": [
 										"chatbot"
@@ -127,9 +127,9 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/chatbot",
+									"raw": "{{API_URL}}/chatbot",
 									"host": [
-										"{{baseUrl}}"
+										"{{API_URL}}"
 									],
 									"path": [
 										"chatbot"
@@ -153,9 +153,9 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/chatbot",
+									"raw": "{{API_URL}}/chatbot",
 									"host": [
-										"{{baseUrl}}"
+										"{{API_URL}}"
 									],
 									"path": [
 										"chatbot"
@@ -171,7 +171,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"From\":\"whatsapp:+522282213034\",\r\n    \"Body\":\"10cm, 20cm, 30cm, 2.58kg; 18cm, 20cm, 30cm, 14.55kg; 30cm,30cm,30cm,30kg\"\r\n}",
+									"raw": "{\r\n    \"From\":\"whatsapp:+522282213034\",\r\n    \"Body\":\"10cm, 20cm, 30cm, 2.58kg;18cm, 20cm, 30cm, 14.55kg;  30cm,30cm,30cm,30kg\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -179,9 +179,61 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/chatbot",
+									"raw": "{{API_URL}}/chatbot",
 									"host": [
-										"{{baseUrl}}"
+										"{{API_URL}}"
+									],
+									"path": [
+										"chatbot"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ElegirTarifa",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"From\":\"whatsapp:+522282213034\",\r\n    \"Body\":\"1\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/chatbot",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"chatbot"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ConfirmarEnvio",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"From\":\"whatsapp:+522282213034\",\r\n    \"Body\":\"2\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/chatbot",
+									"host": [
+										"{{API_URL}}"
 									],
 									"path": [
 										"chatbot"
@@ -213,12 +265,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:3000/?From=%2B522282213034",
-							"protocol": "http",
+							"raw": "{{API_URL}}/?From=%2B522282213034",
 							"host": [
-								"localhost"
+								"{{API_URL}}"
 							],
-							"port": "3000",
 							"path": [
 								""
 							],
@@ -247,7 +297,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"username\": \"alejandro_mota\",\r\n    \"password\": \"hiRbdzVY8m\"\r\n}",
+									"raw": "{\r\n    \"username\": \"Alejandro_Mota\",\r\n    \"password\": \"hiRbdzVY8m\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -255,9 +305,9 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/register",
+									"raw": "{{API_URL}}/register",
 									"host": [
-										"{{baseUrl}}"
+										"{{API_URL}}"
 									],
 									"path": [
 										"register"
@@ -273,7 +323,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"username\": \"alejandro_mota\",\r\n    \"password\": \"hiRbdzVY8m\"\r\n}",
+									"raw": "{\r\n    \"username\": \"Alejandro_Mota\",\r\n    \"password\": \"hiRbdzVY8m\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -281,9 +331,9 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/login",
+									"raw": "{{API_URL}}/login",
 									"host": [
-										"{{baseUrl}}"
+										"{{API_URL}}"
 									],
 									"path": [
 										"login"
@@ -293,7 +343,7 @@
 							"response": []
 						},
 						{
-							"name": "/login Copy",
+							"name": "/logout",
 							"request": {
 								"method": "POST",
 								"header": [],
@@ -307,12 +357,97 @@
 									}
 								},
 								"url": {
-									"raw": "{{baseUrl}}/logout",
+									"raw": "{{API_URL}}/logout",
 									"host": [
-										"{{baseUrl}}"
+										"{{API_URL}}"
 									],
 									"path": [
 										"logout"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Remitentes",
+					"item": [
+						{
+							"name": "Remitentes",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}/remitentes",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"remitentes"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Remitente",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}/remitentes/2282213034",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"remitentes",
+										"2282213034"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Remitente",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"_id\":\"2282213034\",\r\n    \"nombre\": \" Nuevo Remitente API\",\r\n    \"calle\": \" Nueva calle\",\r\n    \"codigoPostal\": \"91060\",\r\n    \"colonia\": \" Centro\",\r\n    \"ciudad\": \" Xalapa\",\r\n    \"estado\": \" Veracruz\",\r\n    \"celular\": \" 2284064806\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/remitentes/",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"remitentes",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Remitente",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}/remitentes/0204598f4be3632d36dcce10ed006755",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"remitentes",
+										"0204598f4be3632d36dcce10ed006755"
 									]
 								}
 							},
@@ -326,9 +461,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/ruta-protegida",
+							"raw": "{{API_URL}}/ruta-protegida",
 							"host": [
-								"{{baseUrl}}"
+								"{{API_URL}}"
 							],
 							"path": [
 								"ruta-protegida"
@@ -343,9 +478,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/",
+							"raw": "{{API_URL}}/",
 							"host": [
-								"{{baseUrl}}"
+								"{{API_URL}}"
 							],
 							"path": [
 								""
@@ -461,7 +596,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"name\": \"Alejandro_Mota\",\r\n    \"password\": \"hiRbdzVY8m\",\r\n    \"roles\": [\"\"],\r\n    \"type\": \"user\"\r\n}",
+									"raw": "{\r\n    \"name\": \"Alejandro_Mota\",\r\n    \"password\": \"hiRbdzVY8m\",\r\n    \"roles\": [\r\n        \"system_admin\"\r\n    ],\r\n    \"type\": \"user\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -476,6 +611,109 @@
 									"path": [
 										"_users",
 										"org.couchdb.user:Alejandro_Mota"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "UpdateUser",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name: Alejandro_Mota\",\r\n    \"password\" : \"hiRbdzVY8m\",\r\n    \"roles\" :[\r\n        \"system_admin\"\r\n    ],\r\n    \"type\" : \"user\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/_users/org.couchdb.user:Alejandro_Mota",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"_users",
+										"org.couchdb.user:Alejandro_Mota"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "DeleteUser",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/_users/org.couchdb.user:Alejandro_Mota",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"_users",
+										"org.couchdb.user:Alejandro_Mota"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "CreateDbRole",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"admins\" : {\r\n        \"names\" : []\r\n    },\r\n    \"members\" : {\r\n        \"names\" : [],\r\n        \"roles\" : [\r\n            \"system_admin\"\r\n        ]\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/envios/_security",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"envios",
+										"_security"
 									]
 								}
 							},
@@ -644,7 +882,7 @@
 					]
 				},
 				{
-					"name": "/Paquetes",
+					"name": "envios",
 					"item": [
 						{
 							"name": "/_all_docs",
@@ -652,12 +890,12 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{databaseUrl}}/remitentes/_all_docs",
+									"raw": "{{databaseUrl}}/envios/_all_docs",
 									"host": [
 										"{{databaseUrl}}"
 									],
 									"path": [
-										"remitentes",
+										"envios",
 										"_all_docs"
 									]
 								}
@@ -665,7 +903,7 @@
 							"response": []
 						},
 						{
-							"name": "/destinatarios",
+							"name": "/envio",
 							"protocolProfileBehavior": {
 								"disableBodyPruning": true
 							},
@@ -682,12 +920,12 @@
 									}
 								},
 								"url": {
-									"raw": "{{databaseUrl}}/destinatarios/2282277999",
+									"raw": "{{databaseUrl}}/envios/2282277999",
 									"host": [
 										"{{databaseUrl}}"
 									],
 									"path": [
-										"destinatarios",
+										"envios",
 										"2282277999"
 									]
 								}
@@ -695,7 +933,7 @@
 							"response": []
 						},
 						{
-							"name": "/destinatarios",
+							"name": "/envios",
 							"request": {
 								"method": "PUT",
 								"header": [],
@@ -709,13 +947,13 @@
 									}
 								},
 								"url": {
-									"raw": "{{databaseUrl}}/destinatarios/2282277999",
+									"raw": "{{databaseUrl}}/envios/",
 									"host": [
 										"{{databaseUrl}}"
 									],
 									"path": [
-										"destinatarios",
-										"2282277999"
+										"envios",
+										""
 									]
 								}
 							},
@@ -763,12 +1001,12 @@
 						"method": "PUT",
 						"header": [],
 						"url": {
-							"raw": "{{databaseUrl}}/paquetes",
+							"raw": "{{databaseUrl}}/remitentes",
 							"host": [
 								"{{databaseUrl}}"
 							],
 							"path": [
-								"paquetes"
+								"remitentes"
 							]
 						}
 					},
@@ -818,7 +1056,7 @@
 	],
 	"variable": [
 		{
-			"key": "baseUrl",
+			"key": "API_URL",
 			"value": "http://localhost:3000",
 			"type": "string"
 		},
