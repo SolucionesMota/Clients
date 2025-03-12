@@ -90,7 +90,7 @@ function eligiendoProcesoMain(
         sesionCliente.flujo.subpaso = "";
         sendMessage(
           sender,
-          "Por favor copia y pega la siguiente plantilla para llenarla",
+          "Por favor copia y pega la plantilla para llenarla o si prefieres puedes llenar el siguiente formulario https://whatsform.com/Up1kEP",
           "Instrucciones del uso de plantilla"
         );
         sendMessage(sender, formatoDatos, "solicitando datos de envío");
@@ -109,7 +109,7 @@ function eligiendoProcesoMain(
       sesionCliente.flujo.subpaso = "";
       sendMessage(
         sender,
-        "Por favor copia y pega la siguiente plantilla para llenarla",
+        "Por favor copia y pega la plantilla para llenarla o si prefieres puedes llenar el siguiente formulario https://whatsform.com/Up1kEP",
         "Instrucciones del uso de plantilla"
       );
       sendMessage(sender, formatoDatos, "solicitando datos de envío");
