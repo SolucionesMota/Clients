@@ -1,68 +1,65 @@
 import { client, sandboxNumber } from "../config/twilio-config";
-import {
-  TarifaNacional_10_30,
-  TarifaNacional_8_30,
-  TarifaNacional_Dia_Siguiente,
-  TarifaNacional_Economico,
-  ZonasDeEnvio,
-  ZonasZipCodeMap,
-} from "../db/ZonasZipCode";
+import { fetchSigilmexData } from "../integrations/sigylmex/sigylmex";
+import { envioSigylmex } from "../integrations/sigylmex/sigylmex-types";
 import { fetchStripeData } from "../integrations/stripe/stripe";
 import { Checkout_Session } from "../integrations/stripe/stripe-types";
-import { UserSession, ZipCodeRange } from "../types/types";
+import { UserSession } from "../types/types";
+
+// ** Constantes y Variables Globales **
 const chatbotSesionesDeUsuario: { [key: string]: UserSession } = {};
 
-const formatoDatos = `
-        *Remitente*
-        *Nombre completo o razón social*:
-        *Dirección*:Calle,Colonia,Código Postal,Ciudad,Estado
-        *Celular*:
-        *Correo electrónico*:
-        
-        *Destinatario*
-        *Nombre completo o razón social*:
-        *Dirección*:Calle,Colonia,Código Postal,Ciudad,Estado
-        
-        *Paquete*
-        *Alto*:
-        *Ancho*:
-        *Largo*:
-        *Peso*:
-    `;
-const mensajeBienvenida = `¡Hola! 😊 ¿Cómo puedo ayudarte hoy? Por favor elige una de las siguientes opciones:
+// const FORMATO_DATOS_PLANTILLA = `
+// *Solicitud de guía *
+// Respuesta #10729
+
+// *Solicitud de guía *
+
+// Remitente  : Nombre completo o razón social
+// Domicilio de origen : Calle, Colonia, Código Postal, Ciudad, Estado
+// Código postal de origen :
+// Destinatario  : Nombre completo o razón social
+// Dirección de destino : Calle, Colonia, Código Postal, Ciudad, Estado
+// Código postal de destino  :
+// Teléfono de destinatario  :
+// Peso y medidas : Peso en kg Largo x Ancho x Alto
+// Contenido  :
+// Paquetería y tipo de servicio  :
+// `;
+
+const MENSAJE_BIENVENIDA = `¡Hola! 😊 ¿Cómo puedo ayudarte hoy? Por favor elige una de las siguientes opciones:
   1. *Comprar* - Comprar una guía.
   2. *Cotizar* - Cotizar una guía.
   3. *Soporte* -   Contactar a soporte.`;
 
-const procesoEnDesarrolloAlertMessage =
+const MENSAJE_PROCESO_EN_DESARROLLO =
   "Este proceso está en desarrollo, por favor espere a que se habilite";
 
-const mensajeElegirTarifa = `Si quieres comprar elige la tarifa que deseas:
+const MENSAJE_ELEGIR_TARIFA = `Si quieres comprar elige la tarifa que deseas:
 1. Tarifa 8:30
 2. Tarifa 10:30
 3. Tarifa Dia siguiente
 4. Tarifa Economica`;
 
-const mensajeDePago = `Le compartimos nuestros Métodos de pago ✅💲
+const MENSAJE_DE_PAGO = `Le compartimos nuestros Métodos de pago ✅💲
 Por favor envia un mensaje de confirmación cuando hayas realizado el pago:
 
 1 ✅Transferencia
-Jorge Michel Gallardo 
+Jorge Michel Gallardo
 
 Institución Mercado pago W
 Cuenta CLABE: 722969010270278149
 
 2 ✅Deposito
-Banco INBURSA (Oxxo, Walmart, Telecomm, Telcel, Sanborns). 
+Banco INBURSA (Oxxo, Walmart, Telecomm, Telcel, Sanborns).
 
 1234 1234 1234 1234(Solo deposito, no transferencia)
 
-3 ✅Pago con Tarjeta (Débito o Crédito) 
+3 ✅Pago con Tarjeta (Débito o Crédito)
 Ingresa el monto solicitado en el siguiente link:
 
 https://buy.stripe.com/test_dR616d9pEfqscE09AC
 
-4 ✅ PayPal 
+4 ✅ PayPal
 Ingresa el monto solicitado en el siguiente link:
 
 https://www.paypal.me/pago
@@ -72,59 +69,28 @@ Ingresa el monto solicitado en el siguiente link:
 
 link.mercadopago.com.mx/pagoe `;
 
-const mensajeDePagoExitoso = `¡Gracias! Tu compra ha sido realizada con éxito.`;
+const MENSAJE_PAGO_EXITOSO = `¡Gracias! Tu compra ha sido realizada con éxito.`;
 
-//Bienvenida
+//const MENSAJE_COTIZACIONES_FINALIZADAS = `Cotizaciones finalizadas. ¿Deseas comprar alguna de estas guías?
+//1. *Sí, comprar*.
+//2. *No, gracias*.`;
+const MENSAJE_COTIZACIONES_FINALIZADAS = `elige una de las tarifas para comprar`;
 
-function eligiendoProcesoMain(
-  sender: string,
-  choice: string,
-  sesionCliente: UserSession
-) {
-  sesionCliente.flujo.subpaso = "";
-  switch (choice.toLowerCase()) {
-    case "1":
-    case "comprar":
-      if (!sesionCliente.cotizacion) {
-        sesionCliente.flujo.paso = "compra";
-        sesionCliente.flujo.subpaso = "";
-        sendMessage(
-          sender,
-          "Por favor copia y pega la plantilla para llenarla o si prefieres puedes llenar el siguiente formulario https://whatsform.com/Up1kEP",
-          "Instrucciones del uso de plantilla"
-        );
-        sendMessage(sender, formatoDatos, "solicitando datos de envío");
-      } else {
-        sendMessage(
-          sender,
-          "Ya tienes una compra en proceso",
-          "Proceso compra"
-        );
-        console.log(sesionCliente.cotizacion);
-      }
-      break;
-    case "2":
-    case "cotizar":
-      sesionCliente.flujo.paso = "cotizar";
-      sesionCliente.flujo.subpaso = "";
-      sendMessage(
-        sender,
-        "Por favor copia y pega la plantilla para llenarla o si prefieres puedes llenar el siguiente formulario https://whatsform.com/Up1kEP",
-        "Instrucciones del uso de plantilla"
-      );
-      sendMessage(sender, formatoDatos, "solicitando datos de envío");
-      break;
-    case "3":
-    case "soporte":
-      sesionCliente.flujo.paso = "";
-      sendMessage(sender, procesoEnDesarrolloAlertMessage, "Proceso soporte");
-      break;
-    default:
-      return "Sorry, I didn't understand that. Please choose one of the following options:\n1. Comprar\n2. Cotizar\n3. Soporte";
-  }
-  // sendMessage(sender, responseMessage, "Respuesta enviada");
-}
+const MENSAJE_SELECCIONAR_TARIFA_COMPRA = `Por favor, selecciona el número de la tarifa que deseas comprar:`;
+const MENSAJE_AVISAME_PAGO = `Avísame cuando hayas pagado y el método que usaste para validarlo y proceder a generar tu guía.`;
+const MENSAJE_FORMATO_INCORRECTO = `El formato de los datos proporcionados no coincide con la plantilla esperada. Por favor, asegúrate de usar el siguiente formulario para enviar tus datos.`;
+// const MENSAJE_REINTENTAR_PLANTILLA = `Por favor, utiliza la siguiente plantilla para enviarnos tus datos nuevamente:`;
+const FORMULARIO_ENLACE = `https://whatsform.com/Up1kEP`;
+const MENSAJE_ENLACE_FORMULARIO = `asegúrate de usar el siguiente formulario para enviar tus datos: ${FORMULARIO_ENLACE}`;
 
+// ** Funciones Utilitarias **
+
+/**
+ * Envía un mensaje de texto al cliente usando la API de Twilio.
+ * @param {string} sender Número de teléfono del cliente.
+ * @param {string} body Cuerpo del mensaje a enviar.
+ * @param {string} logMessage Mensaje para registrar en la consola.
+ */
 function sendMessage(sender: string, body: string, logMessage: string) {
   client.messages
     .create({
@@ -133,672 +99,21 @@ function sendMessage(sender: string, body: string, logMessage: string) {
       to: sender,
     })
     .then((message) => {
-      console.log(`${logMessage}: ${message.sid}`);
-      console.log(`Mensaje enviado: ${body}`);
+      // console.log("log para twilio", message);
+      // console.log(`${logMessage}: ${message.sid}`);
+      // console.log(`Mensaje enviado: ${body}`);
     })
     .catch((err) => console.error(`Error enviando mensaje: ${err}`));
 }
 
-function parseData(message: string, sesionCliente: UserSession) {
-  const lines = message
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line !== "");
-
-  let currentSection: "remitente" | "destinatario" | "paquete" | null = null;
-  let remitenteData: Record<string, string> = {};
-  let destinatarioData: Record<string, string> = {};
-  let paqueteData: Record<string, string> = {};
-
-  lines.forEach((line) => {
-    if (line === "Remitente") {
-      currentSection = "remitente";
-      return;
-    }
-    if (line === "Destinatario") {
-      currentSection = "destinatario";
-      return;
-    }
-    if (line === "Paquete") {
-      currentSection = "paquete";
-      return;
-    }
-
-    const parts = line.split(":");
-    if (parts.length > 1) {
-      const key = parts[0].trim();
-      const value = parts.slice(1).join(":").trim(); // Unir valores si hay ":" en la dirección
-
-      if (currentSection === "remitente") {
-        remitenteData[key] = value;
-      } else if (currentSection === "destinatario") {
-        destinatarioData[key] = value;
-      } else if (currentSection === "paquete") {
-        paqueteData[key] = value;
-      }
-    }
-  });
-
-  // **Remitente**
-  sesionCliente.remitente = {
-    nombre: remitenteData["Nombre completo o razón social"] || "",
-    direccion: parseDireccion(remitenteData["Dirección"]),
-    celular: remitenteData["Celular"] || "",
-    correo: remitenteData["Correo electrónico"] || "",
-  };
-
-  // **Destinatario**
-  sesionCliente.destinatario = {
-    nombre: destinatarioData["Nombre completo o razón social"] || "",
-    direccion: parseDireccion(destinatarioData["Dirección"]),
-    celular: destinatarioData["Celular"] || "",
-    correo: destinatarioData["Correo electrónico"] || "",
-  };
-
-  // **Paquete**
-  sesionCliente.paquetes = [
-    {
-      alto: parseFloat(paqueteData["Alto"] || "0"),
-      ancho: parseFloat(paqueteData["Ancho"] || "0"),
-      largo: parseFloat(paqueteData["Largo"] || "0"),
-      peso: parseFloat(paqueteData["Peso"] || "0"),
-      costo: 0, // Se puede calcular después
-    },
-  ];
-}
-
-function parseDireccion(direccionStr: string | undefined) {
-  if (!direccionStr) {
-    return { calle: "", colonia: "", codigoPostal: "", ciudad: "", estado: "" };
-  }
-
-  const parts = direccionStr.split(",");
-  return {
-    calle: parts[0]?.trim() || "",
-    codigoPostal: parts[1]?.trim() || "",
-    colonia: parts[2]?.trim() || "",
-    ciudad: parts[3]?.trim() || "",
-    estado: parts[4]?.trim() || "",
-  };
-}
-
-function calcularCostos(sender: string, sesionCliente: UserSession) {
-  const remitente = sesionCliente.remitente;
-  const destinatario = sesionCliente.destinatario;
-  const paquetes = sesionCliente.paquetes;
-
-  const estado_remitente = limpiarEstado(`${remitente?.direccion.estado}`);
-  const estado_destinatario = limpiarEstado(
-    `${destinatario?.direccion.estado}`
-  );
-  console.log("estado_remitente", estado_remitente);
-  console.log("estado_destinatario", estado_destinatario);
-
-  const ZonaZipCodeRemitente: ZipCodeRange[] | undefined = ZonasZipCodeMap.get(
-    `${estado_remitente}`
-  )?.filter(
-    (zona: { zipcode_start: string; zipcode_end: string }) =>
-      Number(zona.zipcode_start) <= Number(remitente?.direccion.codigoPostal) &&
-      Number(zona.zipcode_end) >= Number(remitente?.direccion.codigoPostal)
-  );
-
-  const ZonaZipCodeDestinatario: ZipCodeRange[] | undefined =
-    ZonasZipCodeMap.get(`${estado_destinatario}`)?.filter(
-      (zona: { zipcode_start: string; zipcode_end: string }) =>
-        Number(zona.zipcode_start) <=
-          Number(destinatario?.direccion.codigoPostal) &&
-        Number(zona.zipcode_end) >= Number(destinatario?.direccion.codigoPostal)
-    );
-
-  console.log("ZonaZipCodeRemitente", ZonaZipCodeRemitente);
-  console.log("ZonaZipCodeDestinatario", ZonaZipCodeDestinatario);
-
-  const groupRemitente = ZonaZipCodeRemitente?.[0]?.group;
-  const groupDestinatario = ZonaZipCodeDestinatario?.[0]?.group;
-
-  console.log("groupRemitente", groupRemitente);
-  console.log("groupDestinatario", groupDestinatario);
-
-  let ZonaEnvio =
-    groupRemitente && groupDestinatario
-      ? ZonasDeEnvio[groupRemitente][groupDestinatario]
-      : undefined;
-
-  console.log("ZonaEnvio", ZonaEnvio);
-
-  if (ZonaEnvio === groupRemitente) {
-    ZonaEnvio = ZonaEnvio?.replace("*", "");
-  }
-
-  if (!ZonaEnvio) {
-    sendMessage(
-      sender,
-      "Lo sentimos, no podemos calcular costos para esta ruta de envío",
-      "Error en cálculo de costos"
-    );
-    sesionCliente.flujo.subpaso = "";
-    return;
-  }
-
-  let mensaje_tarifas_disponibles = `Tenemos las siguientes tarifas disponibles, elige una:\n`;
-
-  for (let paquete of paquetes!) {
-    const peso = Math.ceil(paquete.peso);
-    const costo_fedex_8_30 =
-      TarifaNacional_8_30.Paquetes[peso][Number(ZonaEnvio)];
-    const costo_fedex_10_30 =
-      TarifaNacional_10_30.Paquetes[peso][Number(ZonaEnvio)];
-    const costo_fedex_dia_siguiente =
-      TarifaNacional_Dia_Siguiente.Paquetes[peso][Number(ZonaEnvio)];
-    const costo_fedex_economico =
-      TarifaNacional_Economico.Paquetes[peso][Number(ZonaEnvio)];
-    mensaje_tarifas_disponibles += `1. 8:30: ${costo_fedex_8_30}\n`;
-    mensaje_tarifas_disponibles += `2. 10:30: ${costo_fedex_10_30}\n`;
-    mensaje_tarifas_disponibles += `3. Dia siguiente: ${costo_fedex_dia_siguiente}\n`;
-    mensaje_tarifas_disponibles += `4. Economica: ${costo_fedex_economico}\n`;
-
-    sesionCliente.cotizacion = {
-      costo_fedex_8_30: costo_fedex_8_30,
-      costo_fedex_10_30: costo_fedex_10_30,
-      costo_fedex_dia_siguiente: costo_fedex_dia_siguiente,
-      costo_fedex_economico: costo_fedex_economico,
-    };
-  }
-
-  sendMessage(sender, mensaje_tarifas_disponibles, "Costo de envío");
-}
-
-function esCompra(sender: string, message: string, sesionCliente: UserSession) {
-  const tarifaElegida = message;
-  switch (tarifaElegida) {
-    case "8:30":
-    case "1":
-      console.log("tarifa 8:30");
-      sesionCliente.flujo.paso = "compra";
-      sesionCliente.flujo.subpaso = "esperando_confirmacion_pago";
-      sesionCliente.envios?.push({
-        remitente: sesionCliente.remitente!,
-        destinatario: sesionCliente.destinatario!,
-        paquetes: sesionCliente.paquetes!,
-        tarifa: TarifaNacional_8_30,
-        fechaEnvio: new Date(),
-        fechaEntrega: new Date(),
-        estado: "prospecto",
-        _id: "1",
-        checkout_session_id: "",
-        costo: sesionCliente.cotizacion?.costo_fedex_8_30 ?? 0,
-      });
-      sendMessage(sender, mensajeDePago, "Mensaje eleccion pago");
-      break;
-    case "10:30":
-    case "2":
-      console.log("tarifa 10:30");
-      sesionCliente.flujo.paso = "compra";
-      sesionCliente.flujo.subpaso = "esperando_confirmacion_pago";
-      sesionCliente.envios?.push({
-        remitente: sesionCliente.remitente!,
-        destinatario: sesionCliente.destinatario!,
-        paquetes: sesionCliente.paquetes!,
-        tarifa: TarifaNacional_10_30,
-        fechaEnvio: new Date(),
-        fechaEntrega: new Date(),
-        estado: "prospecto",
-        _id: "1",
-        checkout_session_id: "",
-        costo: sesionCliente.cotizacion?.costo_fedex_10_30 ?? 0,
-      });
-      sendMessage(sender, mensajeDePago, "Mensaje eleccion pago");
-      break;
-    case "Dia siguiente":
-    case "3":
-      console.log("tarifa Dia siguiente");
-      sesionCliente.flujo.paso = "compra";
-      sesionCliente.flujo.subpaso = "esperando_confirmacion_pago";
-      sesionCliente.envios?.push({
-        remitente: sesionCliente.remitente!,
-        destinatario: sesionCliente.destinatario!,
-        paquetes: sesionCliente.paquetes!,
-        tarifa: TarifaNacional_Dia_Siguiente,
-        fechaEnvio: new Date(),
-        fechaEntrega: new Date(),
-        estado: "prospecto",
-        _id: "1",
-        checkout_session_id: "",
-        costo: sesionCliente.cotizacion?.costo_fedex_dia_siguiente ?? 0,
-      });
-      sendMessage(sender, mensajeDePago, "Mensaje eleccion pago");
-      break;
-    case "Economica":
-    case "4":
-      console.log("tarifa Economica");
-      sesionCliente.flujo.paso = "compra";
-      sesionCliente.flujo.subpaso = "esperando_confirmacion_pago";
-      sesionCliente.envios?.push({
-        remitente: sesionCliente.remitente!,
-        destinatario: sesionCliente.destinatario!,
-        paquetes: sesionCliente.paquetes!,
-        tarifa: TarifaNacional_Economico,
-        fechaEnvio: new Date(),
-        fechaEntrega: new Date(),
-        estado: "prospecto",
-        _id: "1",
-        checkout_session_id: "",
-        costo: sesionCliente.cotizacion?.costo_fedex_economico ?? 0,
-      });
-      sendMessage(sender, mensajeDePago, "Mensaje eleccion pago");
-      break;
-    case "cancelar":
-    case "5":
-      console.log("envio cancelado");
-      sesionCliente.flujo.subpaso = "";
-      sesionCliente.flujo.paso = "";
-      sendMessage(sender, "Envio cancelado", "Envio cancelado");
-      break;
-    default:
-      console.log("tarifa no válida o envio cancelado");
-      sesionCliente.flujo.subpaso = "";
-      sesionCliente.flujo.paso = "";
-      sendMessage(
-        sender,
-        mensajeElegirTarifa,
-        "mensaje de elección de tarifa enviado"
-      );
-      break;
-  }
-}
-
-async function confirmarPago(
-  sender: string,
-  message: string,
-  sesionCliente: UserSession
-) {
-  sesionCliente.remitente!.celular =
-    (await getNormalizedNumber(sender.split(":")[1])) ?? "";
-  const envio_remitente_celular = sesionCliente.remitente!.celular;
-  const envio_remitente_nombre = sesionCliente.remitente!.nombre;
-  const envio_monto = sesionCliente.envios![0].costo;
-
-  const checkout_sessions: Checkout_Session[] = (
-    await fetchStripeData("checkout/sessions")
-  ).data;
-  const most_recent_checkout_session = checkout_sessions[0];
-  const checkout_celular = most_recent_checkout_session.customer_details.phone;
-  const checkout_nombre = most_recent_checkout_session.customer_details.name;
-  const checkout_monto = most_recent_checkout_session.amount_total;
-
-  if (checkout_celular === envio_remitente_celular) {
-    if (checkout_monto < envio_monto) {
-      sendMessage(
-        sender,
-        "El pago no correcto, ponte en contacto con soporte",
-        "Pago incorrecto"
-      );
-    } else {
-      sendMessage(
-        sender,
-        "El pago es correcto. Procederemos a generar la guia de envío",
-        "Pago correcto"
-      );
-    }
-    sesionCliente.flujo.subpaso = "";
-    sesionCliente.flujo.paso = "";
-  } else {
-    sendMessage(
-      sender,
-      "el último pago registrado no corresponde al remitente, ponte en contacto con soporte",
-      "Pago incorrecto"
-    );
-    sesionCliente.flujo.subpaso = "";
-    sesionCliente.flujo.paso = "";
-  }
-}
-// Función auxiliar para limpiar el nombre del estado
-function limpiarEstado(estado: string): string {
-  return estado
-    .split(" ")
-    .join("_")
-    .toLowerCase() // Convertir a minúsculas
-    .replace(/á/g, "a") // Remover acentos
-    .replace(/é/g, "e")
-    .replace(/í/g, "i")
-    .replace(/ó/g, "o")
-    .replace(/ú/g, "u")
-    .replace(/ñ/g, "n")
-    .replace(/[^a-z0-9_]/g, ""); // Remover caracteres especiales
-}
-
-// function crear_remitente(sender: string, message: string) {
-//   const datos = message.split(",").map((dato) => dato.trim());
-
-//   if (datos.length === 6) {
-//     const direccion: Direccion = {
-//       calle: datos[1],
-//       colonia: datos[2],
-//       codigoPostal: datos[3],
-//       ciudad: datos[4],
-//       estado: datos[5],
-//     };
-//     const remitente: Cliente = {
-//       nombre,
-//       direccion,
-//       celular: sender.split(":")[1],
-//     };
-//     chatbotSesionesDeUsuario[sender].remitente = remitente;
-
-//     console.log("Datos del remitente recibidos:", remitente);
-//     emular_post("remitente", remitente);
-
-//     sendMessage(
-//       sender,
-//       "Por favor, ingresa los datos del destinatario separados por comas en el siguiente orden: Nombre, Calle, Código Postal, colonia, Ciudad, Estado",
-//       "Solicitando datos del destinatario"
-//     );
-//   } else {
-//     const errorMessage = `Los datos del remitente no están en el formato correcto. Por favor, ingresa los datos nuevamente siguiendo el orden indicado:
-//       Nombre, Calle, Código Postal, colonia, Ciudad, Estado`;
-//     sendMessage(sender, errorMessage, "Error al solicitar datos del remitente");
-//   }
-// }
-
-// //Sub pasos cotizar
-// function crear_destinatario(sender: string, message: string) {
-//   const datos = message.split(",").map((dato) => dato.trim());
-//   if (datos.length != 6) {
-//     const errorMessage = `Los datos del destinatario no están en el formato correcto. Por favor, ingresa los datos nuevamente siguiendo el orden indicado:
-//       Nombre, Calle, Código Postal, colonia, Ciudad, Estado`;
-//     sendMessage(
-//       sender,
-//       errorMessage,
-//       "Error al solicitar datos del destinatario"
-//     );
-//   } else {
-//     const [nombre, calle, codigoPostal, colonia, ciudad, estado] = datos;
-//     const destinatario: Cliente = {
-//       nombre,
-//       calle,
-//       codigoPostal,
-//       colonia,
-//       ciudad,
-//       estado,
-//       celular: sender.split(":")[1],
-//     };
-//     chatbotSesionesDeUsuario[sender].destinatario = destinatario;
-
-//     console.log("Datos del destinatario recibidos:", destinatario);
-//     emular_post("destinatario", destinatario);
-
-//     sendMessage(
-//       sender,
-//       'Ahora proporciona la siguiente información de tus paquetes en el siguiente orden. Alto, ancho, largo, peso. Los datos deben incluir sus unidades cm y kg. Para darte una cotización adecuada por favor proporciona las dimensiones y peso exactos. De lo contrario solo podemos proporcionar una aproximación del costo y éste puede ser actualizado cuando visites la sucursal. Si es más de un paquete, separa cada paquete con un punto y coma ";". EJEMPLO Dos paquetes: 10cm, 15cm, 15cm, 0.5kg; 6.2cm, 12cm, 18.5cm, 5.3kg',
-//       "Solicitando información de paquetes"
-//     );
-//   }
-// }
-
-// function crear_paquetes(sender: string, message: string) {
-//   const sesionCliente = chatbotSesionesDeUsuario[sender];
-
-//   const paquetes = parsePackages(message);
-//   console.log("Paquetes recibidos:", paquetes);
-
-//   if (validatePackages(paquetes)) {
-//     storePackagesInSession(paquetes, sesionCliente);
-//     sendPackageConfirmation(paquetes, sender);
-//   } else {
-//     requestPackageResend(sender);
-//   }
-// }
-
-// function parsePackages(message: string): string[] {
-//   return message.includes(";")
-//     ? message.split(";").map((dato) => dato.trim())
-//     : [message.trim()];
-// }
-
-// function validatePackages(paquetes: string[]): boolean {
-//   return true;
-// }
-
-// function storePackagesInSession(
-//   paquetes: string[],
-//   sesionCliente: UserSession
-// ) {
-//   guardarPaquetesEnSesion(paquetes, sesionCliente);
-// }
-
-// function sendPackageConfirmation(paquetes: string[], sender: string) {
-//   enviarConfirmacionPaquetes(paquetes, sender);
-// }
-
-// function requestPackageResend(sender: string) {
-//   solicitarReenvioPaquetes(sender);
-// }
-
-// function crear_envio(sender: string, message: string) {
-//   const sesionCliente = chatbotSesionesDeUsuario[sender];
-//   const envios: Envio[] = [];
-//   const paquetes: Paquete[] | undefined = sesionCliente.paquetes;
-//   const remitente = sesionCliente?.remitente;
-//   const destinatario = sesionCliente?.destinatario;
-
-//   if (!paquetes) {
-//     console.log("No hay paquetes en la sesión");
-//     sendMessage(
-//       sender,
-//       "No hay paquetes en la sesión",
-//       "No hay paquetes en la sesión"
-//     );
-//     return;
-//   }
-//   if (!remitente) {
-//     console.log("No hay remitente en la sesión");
-//     sendMessage(
-//       sender,
-//       "No hay remitente en la sesión",
-//       "No hay remitente en la sesión"
-//     );
-//     return;
-//   }
-//   if (!destinatario) {
-//     console.log("No hay destinatario en la sesión");
-//     sendMessage(
-//       sender,
-//       "No hay destinatario en la sesión",
-//       "No hay destinatario en la sesión"
-//     );
-//     return;
-//   }
-
-//   // for (const paquete of paquetes) {
-//   let envio: Envio = {} as Envio;
-//   envio.remitente = remitente;
-//   envio.destinatario = destinatario;
-//   envio.paquetes = paquetes;
-//   envio.tarifa = TarifaNacional_8_30;
-//   envio.fechaEnvio = new Date();
-//   envio.fechaEntrega = new Date();
-//   envio.estado = "prospecto";
-//   envio._id = "1";
-//   console.log("Envio creado:", envio);
-//   emular_post("envios", envio);
-//   sesionCliente.ultimo_envio = envio;
-//   envios.push(envio);
-//   sesionCliente.envios = envios;
-//   // }
-
-//   // Convertir los envíos a JSON para imprimirlos de manera legible
-// }
-
-// function guardarPaquetesEnSesion(
-//   paquetes: string[],
-//   sesionCliente: UserSession
-// ) {
-//   // for (const paquete of paquetes) {
-//   //   emular_post_db_general(
-//   //     "paquetes",
-//   //     {
-//   //       // remitente: JSON.stringify(sesionCliente.remitente),
-//   //       paquete,
-//   //     },
-//   //     "create"
-//   //   );
-//   // }
-//   sesionCliente.paquetes = paquetes.map((paquete) => {
-//     const [alto, ancho, largo, peso] = paquete
-//       .split(",")
-//       .map((dato) =>
-//         parseFloat(dato.replace("cm", "").replace("kg", "").trim())
-//       );
-
-//     return { alto, ancho, largo, peso } as Paquete;
-//   });
-// }
-
-// function calcular_costos(sender: string) {
-//   const sesionCliente = chatbotSesionesDeUsuario[sender];
-//   if (!sesionCliente.paquetes) {
-//     console.log("No hay paquetes en la sesión");
-//     sendMessage(
-//       sender,
-//       "No hay paquetes en la sesión",
-//       "No hay paquetes en la sesión"
-//     );
-//     return;
-//   }
-
-//   const paquetes = sesionCliente.paquetes;
-//   const remitente = sesionCliente.remitente;
-//   const destinatario = sesionCliente.destinatario;
-
-//   if (!remitente || !destinatario) {
-//     console.log("Faltan datos de remitente o destinatario");
-//     sendMessage(
-//       sender,
-//       "Faltan datos de remitente o destinatario",
-//       "Error en cálculo de costos"
-//     );
-//     return;
-//   }
-
-//   const estado_remitente = limpiarEstado(`${remitente.estado}`);
-//   const estado_destinatario = limpiarEstado(`${destinatario.estado}`);
-
-//   console.log("Estado del remitente:", estado_remitente);
-//   console.log("Estado del destinatario:", estado_destinatario);
-
-//   const ZonaZipCodeRemitente: ZipCodeRange[] | undefined = ZonasZipCodeMap.get(
-//     `${estado_remitente}`
-//   )?.filter(
-//     (zona) =>
-//       Number(zona.zipcode_start) <= Number(remitente.codigoPostal) &&
-//       Number(zona.zipcode_end) >= Number(remitente.codigoPostal)
-//   );
-
-//   const ZonaZipCodeDestinatario: ZipCodeRange[] | undefined =
-//     ZonasZipCodeMap.get(`${estado_destinatario}`)?.filter(
-//       (zona) =>
-//         Number(zona.zipcode_start) <= Number(destinatario.codigoPostal) &&
-//         Number(zona.zipcode_end) >= Number(destinatario.codigoPostal)
-//     );
-
-//   if (!ZonaZipCodeRemitente || !ZonaZipCodeDestinatario) {
-//     console.log(
-//       "No se encontraron zonas para los códigos postales proporcionados"
-//     );
-//     sendMessage(
-//       sender,
-//       "Lo sentimos, no podemos calcular costos para las ubicaciones proporcionadas",
-//       "Error en cálculo de costos"
-//     );
-//     return;
-//   }
-
-//   const groupRemitente: string = ZonaZipCodeRemitente[0].group;
-//   const groupDestinatario: string = ZonaZipCodeDestinatario[0].group;
-//   console.log("Grupo del remitente:", groupRemitente);
-//   console.log("Grupo del destinatario:", groupDestinatario);
-
-//   let ZonaEnvio: string | undefined =
-//     ZonasDeEnvio[groupRemitente]?.[groupDestinatario];
-
-//   if (groupRemitente === groupDestinatario) {
-//     console.log(
-//       "Esta tarifa no aplica para todas las ciudades, quieres ser redirigido para atención?"
-//     );
-//     ZonaEnvio = ZonaEnvio?.replace("*", "");
-//   }
-
-//   if (!ZonaEnvio) {
-//     sendMessage(
-//       sender,
-//       "Lo sentimos, no podemos calcular costos para esta ruta de envío",
-//       "Error en cálculo de costos"
-//     );
-//     return;
-//   }
-
-//   let mensaje_costo = `Los paquetes tienen un costo de envío de:\n`;
-
-//   for (let paquete of paquetes) {
-//     const peso = Math.ceil(paquete.peso);
-//     const costo_fedex_8_30 =
-//       TarifaNacional_8_30.Paquetes[peso][Number(ZonaEnvio)];
-//     const costo_fedex_10_30 =
-//       TarifaNacional_10_30.Paquetes[peso][Number(ZonaEnvio)];
-//     const costo_fedex_economico =
-//       TarifaNacional_Economico.Paquetes[peso][Number(ZonaEnvio)];
-//     const costo_fedex_dia_siguiente =
-//       TarifaNacional_Dia_Siguiente.Paquetes[peso][Number(ZonaEnvio)];
-
-//     mensaje_costo += `Paquete (${paquete.alto}x${paquete.ancho}x${paquete.largo}cm, ${paquete.peso}kg):\n`;
-//     mensaje_costo += `- Fedex 8:30: $${costo_fedex_8_30}\n`;
-//     mensaje_costo += `- Fedex 10:30: $${costo_fedex_10_30}\n`;
-//     mensaje_costo += `- Fedex económico: $${costo_fedex_economico}\n`;
-//     mensaje_costo += `- Fedex día siguiente: $${costo_fedex_dia_siguiente}\n\n`;
-//   }
-
-//   mensaje_costo +=
-//     "\nPor favor, elige una de las tarifas disponibles respondiendo con el nombre del servicio.";
-
-//   sendMessage(sender, mensaje_costo, "Mensaje de costo enviado");
-// }
-
-// //Mensajes
-// function enviarConfirmacionPaquetes(paquetes: string[], sender: string) {
-//   sendMessage(
-//     sender,
-//     `Hemos recibido los siguientes paquetes: ${JSON.stringify(
-//       paquetes
-//     )}\n. Estos son las tarifas dispónibles para el envío. Por favor elige la que mas te convenga`,
-//     "Confirmación de paquetes enviados"
-//   );
-// }
-
-// function solicitarReenvioPaquetes(sender: string) {
-//   sendMessage(
-//     sender,
-//     `Por favor, verifica el formato de los paquetes y envíalos nuevamente.\n
-//     Ejemplo de formato:\n
-//     10cm, 15cm, 15cm, 0.5kg\n
-//     6.2cm, 12cm, 18.5cm, 5.3kg`,
-//     "Solicitando reenvío de paquetes"
-//   );
-// }
-
-// function emular_post(nombreObjeto: string, datos: any) {
-//   const filePath = path.join(__dirname, `${nombreObjeto}.csv`);
-//   const csvData = Object.values(datos).join(",") + "\n";
-
-//   fs.appendFile(filePath, csvData, (err) => {
-//     if (err) {
-//       console.error(`Error writing to ${nombreObjeto}.csv:`, err);
-//     } else {
-//       console.log(`Data appended to ${nombreObjeto}.csv`);
-//     }
-//   });
-// }
-
-async function getNormalizedNumber(phoneNumber: string) {
+/**
+ * Normaliza el número de teléfono usando la API de Lookup de Twilio.
+ * @param {string} phoneNumber Número de teléfono a normalizar.
+ * @returns {Promise<string | null>} Número de teléfono normalizado o null en caso de error.
+ */
+async function getNormalizedNumber(
+  phoneNumber: string
+): Promise<string | null> {
   try {
     const numberInfo = await client.lookups.v2
       .phoneNumbers(phoneNumber)
@@ -810,59 +125,749 @@ async function getNormalizedNumber(phoneNumber: string) {
   }
 }
 
-//Cotizando
+// /**
+//  * Limpia y normaliza el nombre de un estado para comparaciones y búsquedas.
+//  * @param {string} estado Nombre del estado.
+//  * @returns {string} Nombre del estado normalizado.
+//  */
+// function limpiarEstado(estado: string): string {
+//   return estado
+//     .split(" ")
+//     .join("_")
+//     .toLowerCase()
+//     .replace(/á/g, "a")
+//     .replace(/é/g, "e")
+//     .replace(/í/g, "i")
+//     .replace(/ó/g, "o")
+//     .replace(/ú/g, "u")
+//     .replace(/ñ/g, "n")
+//     .replace(/[^a-z0-9_]/g, "");
+// }
 
+/**
+ * Parsea la cadena de dirección y la convierte en un objeto de dirección estructurado.
+ * @param {string | undefined} direccionStr Cadena de dirección sin procesar.
+ * @returns {Direccion} Objeto de dirección estructurado.
+ */
+function parseDireccion(direccionStr: string | undefined) {
+  if (!direccionStr) {
+    return { calle: "", colonia: "", codigoPostal: "", ciudad: "", estado: "" };
+  }
+  const parts = direccionStr.split(",");
+  return {
+    calle: parts[0]?.trim() || "",
+    colonia: parts[1]?.trim() || "", // Antes era el código postal
+    codigoPostal: parts[2]?.trim() || "",
+    ciudad: parts[3]?.trim() || "",
+    estado: parts[4]?.trim() || "",
+  };
+}
+
+/**
+ * Procesa el mensaje entrante del usuario y extrae los datos de envío.
+ * @param {string} message Mensaje del usuario conteniendo los datos.
+ * @param {UserSession} sesionCliente Sesión actual del usuario.
+ * @returns {boolean} Retorna true si el formato es correcto, false si no lo es.
+ */
+function parseData(message: string, sesionCliente: UserSession): boolean {
+  console.log("Mensaje entrante a parseData:", message);
+
+  const lines = message
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+
+  const remitenteData: Record<string, string> = {};
+  const destinatarioData: Record<string, string> = {};
+  const paqueteData: Record<string, string> = {};
+  let parsedFieldsCount = 0;
+
+  for (const line of lines) {
+    // Eliminar asteriscos y otros caracteres no deseados de la línea ANTES de dividir
+    const cleanLine = line.replace(/\*/g, "").trim();
+
+    const parts = cleanLine.split(":"); // Ahora dividimos la línea limpia
+    if (parts.length > 1) {
+      const key = parts[0].trim().toLowerCase(); // La clave ya está limpia
+      const value = parts.slice(1).join(":").trim(); // El valor ya está limpio
+
+      parsedFieldsCount++;
+
+      switch (key) {
+        case "remitente":
+          remitenteData["nombre"] = value;
+          break;
+        case "domicilio de origen":
+          remitenteData["direccion"] = value;
+          break;
+        case "código postal de origen":
+          remitenteData["codigoPostal"] = value;
+          break;
+        case "destinatario":
+          destinatarioData["nombre"] = value;
+          break;
+        case "dirección de destino":
+          destinatarioData["direccion"] = value;
+          break;
+        case "código postal de destino":
+          destinatarioData["codigoPostal"] = value;
+          break;
+        case "teléfono destinatario":
+        case "telefono destinatario":
+          destinatarioData["celular"] = value;
+          break;
+        case "peso":
+          paqueteData["peso"] = value.replace("kg", "").trim(); // Solo quitamos "kg"
+          console.log("peso", paqueteData["peso"]);
+          break;
+        case "medidas":
+        case "Medidas":
+          const [largo, ancho, alto] = value.split("x").map((s) => s.trim());
+          paqueteData["largo"] = largo;
+          paqueteData["ancho"] = ancho;
+          paqueteData["alto"] = alto;
+          break;
+        case "contenido":
+          paqueteData["contenido"] = value;
+          break;
+        case "paquetería y tipo de servicio":
+        case "paqueteria y tipo de servicio":
+          paqueteData["servicio"] = value;
+          paqueteData["paqueteria"] = value;
+          break;
+      }
+    }
+  }
+
+  console.log("Datos parseados de remitente:", remitenteData);
+  console.log("Datos parseados de destinatario:", destinatarioData);
+  console.log("Datos parseados de paquete:", paqueteData);
+
+  // Validación y mensajes de error mejorados
+  if (parsedFieldsCount === 0) {
+    console.log("No se pudo reconocer ningún dato del mensaje.");
+    return false; // No se pudo analizar nada
+  }
+  if (
+    !remitenteData["nombre"] ||
+    !remitenteData["direccion"] ||
+    !remitenteData["codigoPostal"] ||
+    !destinatarioData["nombre"] ||
+    !destinatarioData["direccion"] ||
+    !destinatarioData["codigoPostal"] ||
+    !destinatarioData["celular"] ||
+    !paqueteData["peso"] ||
+    !paqueteData["largo"] ||
+    !paqueteData["ancho"] ||
+    !paqueteData["alto"] ||
+    !paqueteData["contenido"] ||
+    !paqueteData["servicio"]
+  ) {
+    console.log("Formato de datos incompleto: Faltan campos esenciales.");
+    return false; // Faltan campos esenciales
+  }
+
+  sesionCliente.remitente = {
+    nombre: remitenteData["nombre"] || "",
+    direccion: {
+      ...parseDireccion(remitenteData["direccion"]),
+      codigoPostal: remitenteData["codigoPostal"] || "",
+    },
+    celular: "",
+    correo: "",
+  };
+
+  sesionCliente.destinatario = {
+    nombre: destinatarioData["nombre"] || "",
+    direccion: {
+      ...parseDireccion(destinatarioData["direccion"]),
+      codigoPostal: destinatarioData["codigoPostal"] || "",
+    },
+    celular: destinatarioData["celular"] || "",
+    correo: "",
+  };
+
+  sesionCliente.paquetes = [
+    {
+      alto: parseFloat(paqueteData["alto"] || "0"),
+      ancho: parseFloat(paqueteData["ancho"] || "0"),
+      largo: parseFloat(paqueteData["largo"] || "0"),
+      peso: parseFloat(paqueteData["peso"] || "0"),
+      costo: 0,
+      paqueteria: paqueteData["paqueteria"] || "",
+    },
+  ];
+
+  console.log("Datos parseados de remitente:", sesionCliente.remitente);
+  console.log("Datos parseados de destinatario:", sesionCliente.destinatario);
+  console.log("Datos parseados de paquete:", sesionCliente.paquetes);
+  return true;
+}
+
+// function parseData(message: string, sesionCliente: UserSession): boolean {
+//   console.log("Mensaje entrante a parseData:", message);
+
+//   const lines = message
+//     .split("\n")
+//     .map((line) => line.trim())
+//     .filter((line) => line !== "");
+
+//   const remitenteData: Record<string, string> = {};
+//   const destinatarioData: Record<string, string> = {};
+//   const paqueteData: Record<string, string> = {};
+//   let parsedFieldsCount = 0;
+
+//   for (const line of lines) {
+//     // Modificación para manejar el formato "*Clave :* Valor"
+//     const parts = line.split(":");
+//     if (parts.length > 1) {
+//       // Eliminar asteriscos alrededor de la clave y espacios en blanco
+//       const keyWithAsterisks = parts[0].trim();
+//       const key = keyWithAsterisks.replace(/\*/g, "").trim().toLowerCase();
+//       const value = parts.slice(1).join(":").trim();
+//       parsedFieldsCount++; // Increment count if a field is parsed
+//       switch (key) {
+//         case "remitente":
+//           remitenteData["nombre"] = value;
+//           break;
+//         case "domicilio de origen":
+//           remitenteData["direccion"] = value;
+//           break;
+//         case "código postal de origen":
+//           remitenteData["codigoPostal"] = value;
+//           break;
+//         case "destinatario":
+//           destinatarioData["nombre"] = value;
+//           break;
+//         case "dirección de destino":
+//           destinatarioData["direccion"] = value;
+//           break;
+//         case "código postal de destino":
+//           destinatarioData["codigoPostal"] = value;
+//           break;
+//         case "teléfono destinatario": // Corregido el nombre de la clave para coincidir con el input
+//           destinatarioData["celular"] = value;
+//           break;
+//         case "peso":
+//           const [peso] = value.trim();
+//           paqueteData["peso"] = peso.replace("kg", "").trim();
+//           console.log("peso", peso);
+//           break;
+//         case "dimensiones":
+//           const [largo, ancho, alto] = value.split("x");
+//           paqueteData["largo"] = largo;
+//           paqueteData["ancho"] = ancho;
+//           paqueteData["alto"] = alto;
+//           break;
+//         case "contenido":
+//           paqueteData["contenido"] = value;
+//           break;
+//         case "paquetería y tipo de servicio":
+//           paqueteData["servicio"] = value;
+//           paqueteData["paqueteria"] = value;
+//           break;
+//       }
+//     }
+//   }
+
+//   console.log("Datos parseados de remitente:", remitenteData);
+//   console.log("Datos parseados de destinatario:", destinatarioData);
+//   console.log("Datos parseados de paquete:", paqueteData);
+
+//   // Validación de campos mínimos (ajustado a los campos del formato específico)
+//   if (
+//     !remitenteData["nombre"] ||
+//     !remitenteData["direccion"] ||
+//     !remitenteData["codigoPostal"] ||
+//     !destinatarioData["nombre"] ||
+//     !destinatarioData["direccion"] ||
+//     !destinatarioData["codigoPostal"] ||
+//     !destinatarioData["celular"] ||
+//     !paqueteData["peso"] ||
+//     !paqueteData["largo"] ||
+//     !paqueteData["ancho"] ||
+//     !paqueteData["alto"] ||
+//     !paqueteData["contenido"] ||
+//     !paqueteData["servicio"]
+//   ) {
+//     console.log(
+//       "Formato de datos incorrecto: Campos esenciales vacíos o incompletos"
+//     );
+//     return false; // Indicate incorrect format if essential fields are empty after parsing
+//   }
+
+//   sesionCliente.remitente = {
+//     nombre: remitenteData["nombre"] || "",
+//     direccion: {
+//       ...parseDireccion(remitenteData["direccion"]),
+//       codigoPostal: remitenteData["codigoPostal"] || "",
+//     },
+//     celular: "",
+//     correo: "",
+//   };
+
+//   sesionCliente.destinatario = {
+//     nombre: destinatarioData["nombre"] || "",
+//     direccion: {
+//       ...parseDireccion(destinatarioData["direccion"]),
+//       codigoPostal: destinatarioData["codigoPostal"] || "",
+//     },
+//     celular: destinatarioData["celular"] || "",
+//     correo: "",
+//   };
+
+//   sesionCliente.paquetes = [
+//     {
+//       alto: parseFloat(paqueteData["alto"] || "0"),
+//       ancho: parseFloat(paqueteData["ancho"] || "0"),
+//       largo: parseFloat(paqueteData["largo"] || "0"),
+//       peso: parseFloat(paqueteData["peso"] || "0"),
+//       costo: 0,
+//       paqueteria: paqueteData["paqueteria"] || "",
+//     },
+//   ];
+
+//   console.log("Datos parseados de remitente:", sesionCliente.remitente);
+//   console.log("Datos parseados de destinatario:", sesionCliente.destinatario);
+//   console.log("Datos parseados de paquete:", sesionCliente.paquetes);
+//   return true; // Indicate correct format
+// }
+
+// ** Funciones de Flujo del Chatbot **
+
+/**
+ * Maneja la lógica principal al elegir un proceso (Comprar, Cotizar, Soporte).
+ * @param {string} sender Número de teléfono del cliente.
+ * @param {string} choice Opción elegida por el cliente.
+ * @param {UserSession} sesionCliente Sesión actual del usuario.
+ */
+function eligiendoProcesoMain(
+  sender: string,
+  choice: string,
+  sesionCliente: UserSession
+) {
+  sesionCliente.flujo.subpaso = "";
+  const normalizedChoice = choice.toLowerCase();
+
+  if (["1", "comprar"].includes(normalizedChoice)) {
+    if (sesionCliente.cotizacion) {
+      sendMessage(
+        sender,
+        "Ya tienes una compra en proceso.",
+        "Proceso compra en curso"
+      );
+      console.log("Cotización existente:", sesionCliente.cotizacion);
+    } else {
+      sesionCliente.flujo.paso = "compra";
+      sendMessage(
+        sender,
+        `Por favor llena el siguiente formulario ${FORMULARIO_ENLACE} para enviar tus datos`,
+        "Instrucciones para datos de envío"
+      );
+      // sendMessage(
+      //   sender,
+      //   FORMATO_DATOS_PLANTILLA,
+      //   "Solicitando datos de envío"
+      // );
+    }
+  } else if (["2", "cotizar"].includes(normalizedChoice)) {
+    sesionCliente.flujo.paso = "cotizar";
+    sendMessage(
+      sender,
+      `Por favor llena el siguiente formulario ${FORMULARIO_ENLACE} para enviar tus datos`,
+      "Instrucciones para datos de envío"
+    );
+    // sendMessage(sender, FORMATO_DATOS_PLANTILLA, "Solicitando datos de envío");
+  } else if (["3", "soporte"].includes(normalizedChoice)) {
+    sesionCliente.flujo.paso = ""; // Sale del flujo principal
+    sendMessage(sender, MENSAJE_PROCESO_EN_DESARROLLO, "Proceso soporte");
+  } else {
+    sendMessage(
+      sender,
+      "Opción no válida. Por favor, elige:\n1. Comprar\n2. Cotizar\n3. Soporte",
+      "Opción inválida"
+    );
+  }
+}
+
+/**
+ * Cotiza el envío utilizando la API de Sigylmex y muestra las opciones al usuario.
+ * @param {string} sender Número de teléfono del cliente.
+ * @param {UserSession} sesionCliente Sesión actual del usuario.
+ */
+async function cotizarSigylmex(sender: string, sesionCliente: UserSession) {
+  if (
+    !sesionCliente.paquetes ||
+    !sesionCliente.remitente ||
+    !sesionCliente.destinatario
+  ) {
+    sendMessage(
+      sender,
+      "Faltan datos para la cotización.",
+      "Error en cotización"
+    );
+    return;
+  }
+  if (sesionCliente.paquetes.length > 1) {
+    sendMessage(
+      sender,
+      "Lo sentimos, por el momento solo podemos cotizar un paquete a la vez.",
+      "Error en cotización múltiple"
+    );
+    return;
+  }
+
+  const envio: envioSigylmex = {
+    origen: sesionCliente.remitente?.direccion.codigoPostal,
+    destino: sesionCliente.destinatario?.direccion.codigoPostal,
+    peso: sesionCliente.paquetes[0].peso.toString(),
+    largo: sesionCliente.paquetes[0].largo.toString(),
+    alto: sesionCliente.paquetes[0].alto.toString(),
+    ancho: sesionCliente.paquetes[0].ancho.toString(),
+  };
+
+  console.log(
+    "Datos de sesionCliente antes de cotizarSigylmex:",
+    sesionCliente
+  ); // AÑADIDO LOG
+  console.log("envio", envio);
+
+  try {
+    const cotizacionesSigylmex = await fetchSigilmexData("cotizar", "", envio);
+    console.log("Cotizaciones de Sigylmex:", cotizacionesSigylmex);
+
+    if (cotizacionesSigylmex && cotizacionesSigylmex.length > 0) {
+      let mensajeCotizaciones = "Cotizaciones disponibles:\n";
+      cotizacionesSigylmex.forEach(
+        (cotizacion: { servicio: any; total: any }, index: number) => {
+          mensajeCotizaciones += `${index + 1}. *${cotizacion.servicio}*: $${
+            cotizacion.total
+          }\n`;
+        }
+      );
+      sendMessage(
+        sender,
+        mensajeCotizaciones + `\n${MENSAJE_COTIZACIONES_FINALIZADAS}`, // Use the modified message here
+        "Cotizaciones de Sigylmex enviadas"
+      );
+      sesionCliente.cotizacionSigylmex = cotizacionesSigylmex; // Guarda las cotizaciones en sesión
+      sesionCliente.flujo.subpaso = "esperando_decision_compra_cotizacion"; // Esperando decision compra o no despues de cotizar. This subpaso name is now misleading, but keep it for flow consistency, as the question changed.
+    } else {
+      sendMessage(
+        sender,
+        "No se encontraron cotizaciones para esta ruta.",
+        "Sin cotizaciones de Sigylmex"
+      );
+      sesionCliente.flujo.subpaso = ""; // Finaliza el subpaso de cotización
+    }
+  } catch (error) {
+    console.error("Error al obtener cotizaciones de Sigylmex:", error);
+    sendMessage(
+      sender,
+      "Error al obtener cotizaciones. Por favor, intenta más tarde.",
+      "Error API Sigylmex"
+    );
+    sesionCliente.flujo.subpaso = ""; // Finaliza el subpaso de cotización
+  }
+}
+
+function seleccionarTarifaParaCompra(
+  sender: string,
+  message: string,
+  sesionCliente: UserSession
+) {
+  if (
+    !sesionCliente.cotizacionSigylmex ||
+    sesionCliente.cotizacionSigylmex.length === 0
+  ) {
+    sendMessage(
+      sender,
+      "No hay cotizaciones disponibles para seleccionar.",
+      "Error selección cotización"
+    );
+    sesionCliente.flujo.subpaso = "";
+    return;
+  }
+
+  const opcionSeleccionada = parseInt(message.trim());
+  if (
+    isNaN(opcionSeleccionada) ||
+    opcionSeleccionada < 1 ||
+    opcionSeleccionada > sesionCliente.cotizacionSigylmex.length
+  ) {
+    sendMessage(
+      sender,
+      `Opción inválida. Por favor, selecciona un número de cotización del 1 al ${sesionCliente.cotizacionSigylmex.length}.`,
+      "Selección incorrecta de tarifa"
+    );
+    return;
+  }
+
+  const cotizacionSeleccionada =
+    sesionCliente.cotizacionSigylmex[opcionSeleccionada - 1];
+  sesionCliente.envios = [
+    {
+      remitente: sesionCliente.remitente!,
+      destinatario: sesionCliente.destinatario!,
+      paquetes: sesionCliente.paquetes!,
+      tarifa: {
+        nombre: cotizacionSeleccionada.servicio,
+        costo: cotizacionSeleccionada.total,
+      },
+      fechaEnvio: new Date(),
+      fechaEntrega: new Date(),
+      estado: "prospecto",
+      _id: "1",
+      checkout_session_id: "",
+      costo: cotizacionSeleccionada.total,
+    },
+  ];
+
+  sendMessage(sender, MENSAJE_DE_PAGO, "Mensaje eleccion pago");
+  sendMessage(sender, MENSAJE_AVISAME_PAGO, "Mensaje avisame pago stripe"); // Added message after payment methods for stripe
+  sesionCliente.flujo.subpaso = "esperando_confirmacion_pago";
+}
+
+function esCompra(sender: string, message: string, sesionCliente: UserSession) {
+  // This function is now called when user chooses "Comprar" from main menu, or "Sí, comprar" after cotizacion
+  if (
+    sesionCliente.cotizacionSigylmex &&
+    sesionCliente.cotizacionSigylmex.length > 0 &&
+    sesionCliente.flujo.subpaso === "mostrando_cotizaciones_sigylmex_compra"
+  ) {
+    // User is buying after cotizacion, need to select tarifa number
+    sesionCliente.flujo.subpaso = "esperando_seleccion_tarifa_compra";
+    sendMessage(
+      sender,
+      MENSAJE_SELECCIONAR_TARIFA_COMPRA,
+      "Solicitando seleccion de tarifa para compra"
+    );
+  } else if (
+    sesionCliente.flujo.paso === "compra" &&
+    sesionCliente.flujo.subpaso === "mostrando_cotizaciones_sigylmex"
+  ) {
+    // User initiated compra directly and quotes are shown, need to select tarifa number
+    sesionCliente.flujo.subpaso = "esperando_seleccion_tarifa_compra";
+    sendMessage(
+      sender,
+      MENSAJE_SELECCIONAR_TARIFA_COMPRA,
+      "Solicitando seleccion de tarifa para compra"
+    );
+  } else {
+    sendMessage(
+      sender,
+      "No hay cotizaciones disponibles para seleccionar o flujo incorrecto.",
+      "Error al iniciar compra"
+    );
+    sesionCliente.flujo.subpaso = "";
+  }
+}
+
+/**
+ * Confirma el pago del cliente verificando con Stripe (lógica simplificada).
+ * @param {string} sender Número de teléfono del cliente.
+ * @param {string} message Mensaje del cliente confirmando el pago.
+ * @param {UserSession} sesionCliente Sesión actual del usuario.
+ */
+async function confirmarPago(
+  sender: string,
+  message: string,
+  sesionCliente: UserSession
+) {
+  sesionCliente.remitente!.celular =
+    (await getNormalizedNumber(sender.split(":")[1])) ?? "";
+  const envio_remitente_celular = sesionCliente.remitente!.celular;
+  const envio_remitente_nombre = sesionCliente.remitente!.nombre;
+  const envio_monto = sesionCliente.envios![0].costo;
+
+  console.log("Inicio de confirmación de pago");
+  console.log("Mensaje recibido:", message);
+
+  const lowerMessage = message.toLowerCase().trim();
+
+  if (!lowerMessage) {
+    console.log("Mensaje vacío recibido, solicitando datos nuevamente");
+    sendMessage(
+      sender,
+      "No recibimos detalles sobre el método de pago. Por favor indica claramente cómo realizaste el pago.",
+      "Mensaje vacío - Solicitar datos"
+    );
+    return;
+  }
+
+  if (
+    lowerMessage.includes("transferencia") ||
+    lowerMessage.includes("banco")
+  ) {
+    console.log("Validando pago por transferencia");
+    sendMessage(
+      sender,
+      "Pago por transferencia recibido.",
+      "Pago confirmado - Transferencia"
+    );
+    sesionCliente.flujo.subpaso = "";
+    sesionCliente.flujo.paso = "";
+    return;
+  } else if (
+    lowerMessage.includes("deposito") ||
+    lowerMessage.includes("depósito")
+  ) {
+    console.log("Validando pago por depósito");
+    sendMessage(
+      sender,
+      "Pago por depósito recibido.",
+      "Pago confirmado - Depósito"
+    );
+    sesionCliente.flujo.subpaso = "";
+    sesionCliente.flujo.paso = "";
+    return;
+  } else if (lowerMessage.includes("paypal")) {
+    console.log("Validando pago por PayPal");
+    sendMessage(
+      sender,
+      "Pago por PayPal recibido.",
+      "Pago confirmado - PayPal"
+    );
+    sesionCliente.flujo.subpaso = "";
+    sesionCliente.flujo.paso = "";
+    return;
+  } else if (
+    lowerMessage.includes("mercado pago") ||
+    lowerMessage.includes("mercadopago")
+  ) {
+    console.log("Validando pago por Mercado Pago");
+    sendMessage(
+      sender,
+      "Pago por Mercado Pago recibido.",
+      "Pago confirmado - Mercado Pago"
+    );
+    sesionCliente.flujo.subpaso = "";
+    sesionCliente.flujo.paso = "";
+    return;
+  } else if (
+    lowerMessage.includes("tarjeta") ||
+    lowerMessage.includes("stripe") ||
+    lowerMessage.includes("crédito") ||
+    lowerMessage.includes("debito")
+  ) {
+    console.log("Validando pago por tarjeta (Stripe)");
+    try {
+      const checkout_sessions_data = await fetchStripeData("checkout/sessions");
+      const checkout_sessions: Checkout_Session[] = checkout_sessions_data.data;
+      const most_recent_checkout_session = checkout_sessions[0];
+
+      if (!most_recent_checkout_session) {
+        console.log("No se encontró información de pago reciente en Stripe");
+        sendMessage(
+          sender,
+          "No se encontró información de pago reciente. Por favor contacta a soporte.",
+          "Pago no encontrado"
+        );
+        return;
+      }
+
+      console.log("Datos del pago en Stripe:", most_recent_checkout_session);
+
+      const checkout_celular =
+        most_recent_checkout_session.customer_details?.phone;
+      const checkout_nombre =
+        most_recent_checkout_session.customer_details?.name;
+      const checkout_monto = most_recent_checkout_session.amount_total;
+
+      if (checkout_celular === envio_remitente_celular) {
+        if (checkout_monto < envio_monto) {
+          console.log("Monto de pago incorrecto");
+          sendMessage(
+            sender,
+            "El pago no es correcto, ponte en contacto con soporte.",
+            "Pago incorrecto - Monto"
+          );
+        } else {
+          console.log("Pago validado correctamente");
+          sendMessage(
+            sender,
+            "¡El pago es correcto! Procederemos a generar la guía de envío.",
+            "Pago correcto"
+          );
+          sendMessage(sender, MENSAJE_PAGO_EXITOSO, "Pago exitoso - Cliente");
+        }
+        sesionCliente.flujo.subpaso = "";
+        sesionCliente.flujo.paso = "";
+      } else {
+        console.log("El último pago registrado no corresponde al remitente");
+        sendMessage(
+          sender,
+          "El último pago registrado no corresponde al remitente. Por favor contacta a soporte.",
+          "Pago incorrecto - Remitente"
+        );
+        sesionCliente.flujo.subpaso = "";
+        sesionCliente.flujo.paso = "";
+      }
+    } catch (error) {
+      console.error("Error al verificar el pago con Stripe:", error);
+      sendMessage(
+        sender,
+        "Error al verificar el pago. Por favor contacta a soporte.",
+        "Error Stripe API"
+      );
+      sesionCliente.flujo.subpaso = "";
+      sesionCliente.flujo.paso = "";
+    }
+    return;
+  }
+
+  console.log("No se reconoce el método de pago");
+  sendMessage(
+    sender,
+    "Método de pago no reconocido. Por favor indica claramente cómo realizaste el pago.",
+    "Método de pago desconocido"
+  );
+}
+
+/**
+ * Flujo para el proceso de compra.
+ * @param {string} sender Número de teléfono del cliente.
+ * @param {string} message Mensaje del cliente.
+ * @param {UserSession} sesionCliente Sesión actual del usuario.
+ */
 function comprando(
   sender: string,
   message: string,
   sesionCliente: UserSession
 ) {
-  console.log(`Flujo Comprando`);
+  console.log(
+    `Flujo Comprando, subpaso actual: ${sesionCliente.flujo.subpaso}`
+  );
   if (!sesionCliente.flujo.subpaso || sesionCliente.flujo.subpaso === "") {
-    sesionCliente.flujo.subpaso = "calculando_costos";
+    sesionCliente.flujo.subpaso = "ingresando_datos_envio";
   }
-  const flujo = sesionCliente.flujo;
 
-  switch (flujo.subpaso) {
-    case "calculando_costos":
-      parseData(message, sesionCliente);
-      calcularCostos(sender, sesionCliente);
-      sesionCliente.flujo.subpaso = "es_compra";
+  switch (sesionCliente.flujo.subpaso) {
+    case "ingresando_datos_envio":
+      const isValidFormat = parseData(message, sesionCliente);
+      if (!isValidFormat) {
+        sendMessage(
+          sender,
+          MENSAJE_FORMATO_INCORRECTO,
+          "Formato de datos incorrecto"
+        );
+        sendMessage(sender, MENSAJE_ENLACE_FORMULARIO, "Enlace al formulario");
+        sesionCliente.flujo.subpaso = "ingresando_datos_envio"; // Stay in the same sub-step to retry data input
+      } else {
+        console.log(
+          "Sesion cliente despues de parseData en Comprando:",
+          sesionCliente
+        ); // LOG AÑADIDO
+        cotizarSigylmex(sender, sesionCliente); // Cotizar con Sigylmex
+        sesionCliente.flujo.subpaso = "mostrando_cotizaciones_sigylmex"; // Transition to show quotes in compra flow
+      }
       break;
-    case "es_compra":
-      esCompra(sender, message, sesionCliente);
-      console.log(sesionCliente.cotizacion);
+    case "mostrando_cotizaciones_sigylmex":
+      // Now 'esCompra' function will handle the next step when in 'compra' flow and subpaso 'mostrando_cotizaciones_sigylmex'
+      esCompra(sender, message, sesionCliente); // Call esCompra to handle tarifa selection
       break;
-    case "esperando_confirmacion_pago":
-      confirmarPago(sender, message, sesionCliente);
-      break;
-    default:
-      sendMessage(sender, "No entiendo tu mensaje", "Mensaje no entendido");
-      break;
-  }
-}
-
-function cotizando(
-  sender: string,
-  message: string,
-  sesionCliente: UserSession
-) {
-  console.log(`Flujo Cotizando`);
-
-  if (!sesionCliente.flujo.subpaso || sesionCliente.flujo.subpaso === "") {
-    sesionCliente.flujo.subpaso = "calculando_costos";
-  }
-  const flujo = sesionCliente.flujo;
-
-  switch (flujo.subpaso) {
-    case "calculando_costos":
-      parseData(message, sesionCliente);
-      calcularCostos(sender, sesionCliente);
-      sesionCliente.flujo.subpaso = "es_compra";
-      break;
-    case "es_compra":
-      esCompra(sender, message, sesionCliente);
-      // console.log(sesionCliente.cotizacion);
+    case "esperando_seleccion_tarifa_compra":
+      seleccionarTarifaParaCompra(sender, message, sesionCliente); // Process user's tariff selection
       break;
     case "esperando_confirmacion_pago":
       confirmarPago(sender, message, sesionCliente);
@@ -870,25 +875,120 @@ function cotizando(
     default:
       sendMessage(
         sender,
-        "Lo siento, no entiendo tu mensaje. Por favor intenta de nuevo.",
-        "Mensaje no entendido"
+        "No entiendo tu mensaje en el flujo de compra.",
+        "Mensaje no entendido - Compra"
       );
       break;
   }
 }
 
+/**
+ * Flujo para el proceso de cotización.
+ * @param {string} sender Número de teléfono del cliente.
+ * @param {string} message Mensaje del cliente.
+ * @param {UserSession} sesionCliente Sesión actual del usuario.
+ */
+function cotizando(
+  sender: string,
+  message: string,
+  sesionCliente: UserSession
+) {
+  console.log(
+    `Flujo Cotizando, subpaso actual: ${sesionCliente.flujo.subpaso}`
+  );
+
+  if (!sesionCliente.flujo.subpaso || sesionCliente.flujo.subpaso === "") {
+    sesionCliente.flujo.subpaso = "ingresando_datos_envio";
+  }
+
+  switch (sesionCliente.flujo.subpaso) {
+    case "ingresando_datos_envio":
+      const isValidFormat = parseData(message, sesionCliente);
+      if (!isValidFormat) {
+        sendMessage(
+          sender,
+          MENSAJE_FORMATO_INCORRECTO,
+          "Formato de datos incorrecto"
+        );
+        // sendMessage(
+        //   sender,
+        //   MENSAJE_REINTENTAR_PLANTILLA,
+        //   "Reenviando plantilla"
+        // );
+        // sendMessage(sender, FORMATO_DATOS_PLANTILLA, "Plantilla de datos");
+        sendMessage(sender, MENSAJE_ENLACE_FORMULARIO, "Enlace al formulario");
+        sesionCliente.flujo.subpaso = "ingresando_datos_envio"; // Stay in the same sub-step to retry data input
+      } else {
+        console.log(
+          "Sesion cliente despues de parseData en Cotizando:",
+          sesionCliente
+        ); // LOG AÑADIDO
+        cotizarSigylmex(sender, sesionCliente); // Obtener cotizaciones de Sigylmex
+      }
+      break;
+    case "esperando_decision_compra_cotizacion":
+      // **MODIFIED CASE - Now expecting tariff selection (number)**
+      const opcionSeleccionadaCotizacion = parseInt(message.trim());
+      if (
+        !isNaN(opcionSeleccionadaCotizacion) &&
+        opcionSeleccionadaCotizacion >= 1 &&
+        opcionSeleccionadaCotizacion <=
+          (sesionCliente.cotizacionSigylmex?.length || 0)
+      ) {
+        // User selected a tariff number after cotizaciones
+        sesionCliente.flujo.paso = "compra"; // Transition to compra flow
+        sesionCliente.flujo.subpaso = "esperando_seleccion_tarifa_compra"; // Set sub-step for tariff selection in compra
+        seleccionarTarifaParaCompra(sender, message, sesionCliente); // Directly call seleccionarTarifaParaCompra to process the selection and payment
+      } else {
+        // If not a valid number, assume invalid option (could be improved with more specific error message if needed)
+        sendMessage(
+          sender,
+          "Opción no válida. Por favor elige un número de tarifa de la lista.",
+          "Opción no válida en selección de tarifa"
+        );
+      }
+      break;
+    case "mostrando_cotizaciones_sigylmex": // This case should not be reached in 'cotizar' flow after refactor, but kept for safety or future changes
+      sendMessage(
+        sender,
+        "Error inesperado en el flujo de cotización.",
+        "Error flujo cotización"
+      );
+      sesionCliente.flujo.subpaso = "";
+      sesionCliente.flujo.paso = "";
+      break;
+    default:
+      sendMessage(
+        sender,
+        "Lo siento, no entiendo tu mensaje en el flujo de cotización. Por favor intenta de nuevo.",
+        "Mensaje no entendido - Cotización"
+      );
+      break;
+  }
+}
+
+/**
+ * Flujo para el mensaje de bienvenida inicial.
+ * @param {string} sender Número de teléfono del cliente.
+ * @param {UserSession} sesionCliente Sesión actual del usuario.
+ * @param {string} incomingMessage Mensaje entrante del cliente.
+ */
 function bienvenida(
   sender: string,
   sesionCliente: UserSession,
   incomingMessage: string
 ) {
+  console.log(
+    `Flujo Bienvenida, subpaso actual: ${sesionCliente.flujo.subpaso}`
+  );
+
   if (!sesionCliente.flujo.subpaso || sesionCliente.flujo.subpaso === "") {
     sesionCliente.flujo.subpaso = "enviando_bienvenida";
   }
 
   switch (sesionCliente.flujo.subpaso) {
     case "enviando_bienvenida":
-      sendMessage(sender, mensajeBienvenida, "Mensaje de bienvenida enviado");
+      sendMessage(sender, MENSAJE_BIENVENIDA, "Mensaje de bienvenida enviado");
       sesionCliente.flujo.subpaso = "eligiendo_proceso_main";
       break;
     case "eligiendo_proceso_main":
@@ -897,8 +997,8 @@ function bienvenida(
     default:
       sendMessage(
         sender,
-        "fin de switch flujo.subpaso en bienvenida",
-        "Mensaje de bienvenida enviado"
+        "Error en flujo de bienvenida.",
+        "Error desconocido - Bienvenida"
       );
       sesionCliente.flujo.subpaso = "";
       sesionCliente.flujo.paso = "";
@@ -906,6 +1006,11 @@ function bienvenida(
   }
 }
 
+/**
+ * Función principal para procesar mensajes del chatbot y dirigir el flujo de conversación.
+ * @param {string} cliente Número de teléfono del cliente.
+ * @param {string} incomingMessage Mensaje entrante del cliente.
+ */
 export function processChatbotMessageLogic(
   cliente: string,
   incomingMessage: string
@@ -914,8 +1019,12 @@ export function processChatbotMessageLogic(
     !chatbotSesionesDeUsuario[cliente] ||
     chatbotSesionesDeUsuario[cliente].flujo.paso === ""
   ) {
-    chatbotSesionesDeUsuario[cliente] = { flujo: { paso: "bienvenida" } };
+    console.log(`Iniciando nueva sesión para ${cliente}`);
+    chatbotSesionesDeUsuario[cliente] = {
+      flujo: { paso: "bienvenida", subpaso: "" },
+    };
     chatbotSesionesDeUsuario[cliente].cotizacion = undefined;
+    chatbotSesionesDeUsuario[cliente].cotizacionSigylmex = undefined; // Inicializar cotizaciones Sigylmex
     chatbotSesionesDeUsuario[cliente].envios = [];
     chatbotSesionesDeUsuario[cliente].remitente = undefined;
     chatbotSesionesDeUsuario[cliente].destinatario = undefined;
@@ -923,6 +1032,9 @@ export function processChatbotMessageLogic(
   }
 
   const sesionCliente = chatbotSesionesDeUsuario[cliente];
+  console.log(
+    `Mensaje recibido de ${cliente}: "${incomingMessage}", Flujo actual: ${sesionCliente.flujo.paso}, Subpaso: ${sesionCliente.flujo.subpaso}`
+  );
 
   switch (sesionCliente.flujo.paso) {
     case "bienvenida":
@@ -935,7 +1047,11 @@ export function processChatbotMessageLogic(
       comprando(cliente, incomingMessage, sesionCliente);
       break;
     default:
-      sendMessage(cliente, "No entiendo tu mensaje", "Mensaje no entendido");
+      sendMessage(
+        cliente,
+        "No entiendo tu mensaje en el flujo principal.",
+        "Mensaje no entendido - Principal"
+      );
       break;
   }
 }
