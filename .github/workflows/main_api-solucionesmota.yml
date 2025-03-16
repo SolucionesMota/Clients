@@ -10,31 +10,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # Required for actions/checkout
+      contents: read
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
           node-version: '22.x'
 
-      - name: Install Dependencies
+      - name: npm install, build, and test
+        working-directory: ./FastMailService/backend # Use working-directory
         run: |
-          cd FastMailService/backend
           npm install
-
-      - name: Build TypeScript App
-        run: |
-          cd FastMailService/backend
-          npm run build  # This generates "dist/" folder
+          npm run build --if-present
+          npm run test --if-present
 
       - name: Zip artifact for deployment
+        working-directory: ./FastMailService/backend # Zip only the backend
         run: |
-          cd FastMailService/backend
-          zip -r ../../release.zip dist package.json package-lock.json node_modules
+          zip -r ../../../release.zip .  # Zip into the root of the repo, creating release.zip
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -56,7 +52,7 @@ jobs:
           name: node-app
 
       - name: Unzip artifact for deployment
-        run: unzip release.zip
+        run: unzip release.zip # Unzip
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -64,5 +60,5 @@ jobs:
         with:
           app-name: 'api-solucionesmota'
           slot-name: 'Production'
-          package: 'dist'
+          package: . # Deploy from the current directory (root after unzipping)
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_6A4DB85C053649AE9062D181FB787D76 }}
