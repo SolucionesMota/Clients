@@ -27,7 +27,7 @@ async function fetchSigilmexData(
         Authorization: sigylmexApiToken,
       },
       body: JSON.stringify(body), // Ahora usamos el body que se pasa a la función
-      timeout: 30000,
+      timeout: 2 * 60 * 1000,
     });
 
     if (!response.ok) {
