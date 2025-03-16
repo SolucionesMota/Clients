@@ -20,24 +20,22 @@ jobs:
         with:
           node-version: '22.x'
 
-      - name: npm install, build
-        working-directory: ./FastMailService/backend # Work in the backend directory
+      - name: npm install, build, and test
+        working-directory: ./FastMailService/backend
         run: |
           npm install
-          npm run build  # Run the 'build' script (tsc)
+          npm run build  #  Removed --if-present, tsc should always be there.
+          npm run test --if-present  # Keep --if-present for test.
 
       - name: Zip artifact for deployment
         working-directory: ./FastMailService/backend
-        run: |
-          zip -r ../../../release.zip ./dist ./package.json ./package-lock.json ./app.js  # Zip ONLY necessary files
-          # Added app.js, if this is the entry point after the build, otherwise remove this line
-          # If you have other top-level files in backend needed, add them here.
+        run: zip -r ../../dist.zip ./dist # Zip the dist directory
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: release.zip
+          path: dist.zip # Upload dist.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -50,16 +48,13 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: node-app
+          name: node-app # Download the 'node-app' artifact
 
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
-
-      - name: 'Deploy to Azure Web App'
+      - name: 'Deploy to Azure Web App' # Removed Unzip step
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'api-solucionesmota'
           slot-name: 'Production'
-          package: . # Deploy from the current directory (root after unzipping)
+          package: dist.zip # Deploy directly from the zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_6A4DB85C053649AE9062D181FB787D76 }}
