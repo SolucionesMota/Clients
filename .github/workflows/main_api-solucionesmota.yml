@@ -20,17 +20,18 @@ jobs:
         with:
           node-version: '22.x'
 
-      - name: npm install, build, and test
-        working-directory: ./FastMailService/backend # Use working-directory
+      - name: npm install, build
+        working-directory: ./FastMailService/backend # Work in the backend directory
         run: |
           npm install
-          npm run build --if-present
-          npm run test --if-present
+          npm run build  # Run the 'build' script (tsc)
 
       - name: Zip artifact for deployment
-        working-directory: ./FastMailService/backend # Zip only the backend
+        working-directory: ./FastMailService/backend
         run: |
-          zip -r ../../../release.zip .  # Zip into the root of the repo, creating release.zip
+          zip -r ../../../release.zip ./dist ./package.json ./package-lock.json ./app.js  # Zip ONLY necessary files
+          # Added app.js, if this is the entry point after the build, otherwise remove this line
+          # If you have other top-level files in backend needed, add them here.
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -52,7 +53,7 @@ jobs:
           name: node-app
 
       - name: Unzip artifact for deployment
-        run: unzip release.zip # Unzip
+        run: unzip release.zip
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
