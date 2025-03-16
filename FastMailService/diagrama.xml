@@ -1,0 +1,72 @@
+<project>
+    <name>FastMailService</name>
+    <description>Servicio de chatbot para envíos y cotizaciones</description>
+    <architecture>
+        <components>
+            <component>
+                <name>Server</name>
+                <type>Express App</type>
+                <description>Servidor que maneja las solicitudes del chatbot</description>
+                <endpoints>
+                    <endpoint>
+                        <path>/chatbot</path>
+                        <method>POST</method>
+                        <description>Maneja los mensajes entrantes del chatbot</description>
+                    </endpoint>
+                </endpoints>
+            </component>
+            <component>
+                <name>Chatbot Service</name>
+                <type>Service</type>
+                <description>Lógica del chatbot que procesa los mensajes</description>
+                <functions>
+                    <function>processChatbotMessageLogic</function>
+                    <function>handleBienvenida</function>
+                    <function>handleEligiendoServicio</function>
+                    <function>handleCotizar</function>
+                </functions>
+            </component>
+            <component>
+                <name>Database</name>
+                <type>Data Storage</type>
+                <description>Almacena información sobre zonas y tarifas</description>
+                <files>
+                    <file>ZonasZipCode.ts</file>
+                </files>
+            </component>
+            <component>
+                <name>Types</name>
+                <type>Type Definitions</type>
+                <description>Definiciones de tipos utilizados en el proyecto</description>
+                <files>
+                    <file>types.ts</file>
+                </files>
+            </component>
+            <component>
+                <name>Postman Collection</name>
+                <type>API Documentation</type>
+                <description>Definiciones de las API utilizadas por el chatbot</description>
+                <files>
+                    <file>FastMailService.postman_collection.json</file>
+                </files>
+            </component>
+        </components>
+        <interactions>
+            <interaction>
+                <source>Server</source>
+                <target>Chatbot Service</target>
+                <description>Envía mensajes entrantes al servicio del chatbot para su procesamiento</description>
+            </interaction>
+            <interaction>
+                <source>Chatbot Service</source>
+                <target>Database</target>
+                <description>Consulta información sobre zonas y tarifas para calcular costos</description>
+            </interaction>
+            <interaction>
+                <source>Chatbot Service</source>
+                <target>Types</target>
+                <description>Utiliza definiciones de tipos para estructurar datos</description>
+            </interaction>
+        </interactions>
+    </architecture>
+</project>

@@ -1,4 +1,4 @@
-import { Tarifa, ZipCodeRange } from "./../src/types/types";
+import { Tarifa, ZipCodeRange } from "./../types/types";
 
 export const ZonasZipCodeMap = new Map<string, ZipCodeRange[]>([
   [

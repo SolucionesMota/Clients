@@ -1,3 +1,4 @@
+
 import bodyParser from "body-parser";
 import express, { Request, Response } from "express";
 import fs from "fs";
@@ -31,7 +32,7 @@ interface UserSession {
 const sesionesDeUsuario: { [key: string]: UserSession } = {};
 
 app.get("/", (req: Request, res: Response) => {
-  console.log(`get request from ${req.query.From}`);
+  console.log(`GET request from ${req.query.From}`);
   res.send("Hello World");
 });
 
@@ -49,15 +50,15 @@ app.post("/chatbot", (req: Request, res: Response) => {
 
   switch (sesionCliente.flujo.paso) {
     case "bienvenida":
-      bienvenida(cliente);
+      sendWelcomeMessage(cliente);
       sesionCliente.flujo.paso = "eligiendo_servicio";
       break;
     case "eligiendo_servicio":
-      eligiendo_servicio(cliente, incomingMessage);
-      sesionCliente.flujo.paso = map_services(incomingMessage);
+      handleServiceSelection(cliente, incomingMessage);
+      sesionCliente.flujo.paso = mapServices(incomingMessage);
       break;
     case "cotizar":
-      cotizar(cliente, incomingMessage, sesionCliente.flujo);
+      handleQuotation(cliente, incomingMessage, sesionCliente.flujo);
       break;
     default:
       sendErrorMessage(cliente);
@@ -67,30 +68,18 @@ app.post("/chatbot", (req: Request, res: Response) => {
   res.status(200).send("Message processed");
 });
 
-//Pasos de la conversación
+// Conversation Steps
 
-function bienvenida(sender: string) {
-  const mensajeBienvenida = `¡Hola! 😊 ¿Cómo puedo ayudarte hoy? Por favor elige una de las siguientes opciones:
+function sendWelcomeMessage(sender: string) {
+  const welcomeMessage = `¡Hola! 😊 ¿Cómo puedo ayudarte hoy? Por favor elige una de las siguientes opciones:
 1. *Comprar* - Comprar una guía.
 2. *Cotizar* - Cotizar una guía.
-3. *Soporte* -   Contactar a soporte.`;
+3. *Soporte* - Contactar a soporte.`;
 
-  client.messages
-    .create({
-      body: mensajeBienvenida,
-      from: sandboxNumber,
-      to: sender,
-    })
-    .then((message) => {
-      console.log(`Mensaje de bienvenida enviado: ${message.sid}`);
-      console.log(`Mensaje enviado: ${mensajeBienvenida}`);
-    })
-    .catch((err) =>
-      console.error("Error enviando mensaje de bienvenida:", err)
-    );
+  sendMessage(sender, welcomeMessage, "Mensaje de bienvenida enviado");
 }
 
-function eligiendo_servicio(sender: string, choice: string) {
+function handleServiceSelection(sender: string, choice: string) {
   let responseMessage = "";
 
   switch (choice.toLowerCase()) {
@@ -109,27 +98,16 @@ function eligiendo_servicio(sender: string, choice: string) {
       responseMessage =
         "Sure! How can we assist you? Please describe your issue.";
       break;
-
     default:
       responseMessage =
         "Sorry, I didn't understand that. Please choose one of the following options:\n1. Comprar\n2. Cotizar\n3. Soporte";
       break;
   }
 
-  client.messages
-    .create({
-      body: responseMessage,
-      from: sandboxNumber,
-      to: sender,
-    })
-    .then((message) => {
-      console.log(`Respuesta enviada: ${message.sid}`);
-      console.log(`Mensaje enviado: ${responseMessage}`);
-    })
-    .catch((err) => console.error("Error al enviar respuesta:", err));
+  sendMessage(sender, responseMessage, "Respuesta enviada");
 }
 
-function cotizar(sender: string, message: string, flujo: Flujo) {
+function handleQuotation(sender: string, message: string, flujo: Flujo) {
   console.log(`Iniciando cotización para el sender: ${sender}`);
 
   if (!flujo.subpaso) {
@@ -139,47 +117,41 @@ function cotizar(sender: string, message: string, flujo: Flujo) {
 
   switch (flujo.subpaso) {
     case "creando_remitente":
-      crear_remitente(sender, message);
+      createSender(sender, message);
       flujo.subpaso = "creando_destinatario";
       break;
     case "creando_destinatario":
-      crear_destinatario(sender, message);
+      createRecipient(sender, message);
       flujo.subpaso = "creando_paquetes";
       break;
     case "creando_paquetes":
-      crear_paquetes(sender, message);
-      calcular_costos(sender);
+      createPackages(sender, message);
+      calculateCosts(sender);
       flujo.paso = "bienvenida";
       flujo.subpaso = "";
       break;
-    // case "calculando_costos":
-    //   // calcular_costos(sender);
-    //   break;
-    //   console.log("Calling calcular_costos function");
-    //   calcular_costos(sender);
-    //   break;
     default:
       sendErrorMessage(sender);
       break;
   }
 }
 
-// Función auxiliar para limpiar el nombre del estado
-function limpiarEstado(estado: string): string {
-  return estado
+// Helper function to clean state names
+function cleanStateName(state: string): string {
+  return state
     .split(" ")
     .join("_")
-    .toLowerCase() // Convertir a minúsculas
-    .replace(/á/g, "a") // Remover acentos
+    .toLowerCase()
+    .replace(/á/g, "a")
     .replace(/é/g, "e")
     .replace(/í/g, "i")
     .replace(/ó/g, "o")
     .replace(/ú/g, "u")
     .replace(/ñ/g, "n")
-    .replace(/[^a-z0-9_]/g, ""); // Remover caracteres especiales
+    .replace(/[^a-z0-9_]/g, "");
 }
 
-function crear_remitente(sender: string, message: string) {
+function createSender(sender: string, message: string) {
   const datos = message.split(",").map((dato) => dato.trim());
 
   if (datos.length === 6) {
@@ -195,50 +167,33 @@ function crear_remitente(sender: string, message: string) {
     sesionesDeUsuario[sender].remitente = remitente;
 
     console.log("Datos del remitente recibidos:", remitente);
-    emular_post_db_general("remitente", remitente, "create");
+    emulatePostDb("remitente", remitente, "create");
 
-    client.messages
-      .create({
-        body: `Por favor, ingresa los datos del destinatario separados por comas en el siguiente orden:
+    sendMessage(
+      sender,
+      `Por favor, ingresa los datos del destinatario separados por comas en el siguiente orden:
         Nombre, Calle, Código Postal, colonia, Ciudad, Estado`,
-        from: sandboxNumber,
-        to: sender,
-      })
-      .then((message) => {
-        console.log(`Datos recibidos: ${message.sid}`);
-        console.log(
-          `Mensaje enviado: Por favor, ingresa los datos del destinatario separados por comas en el siguiente orden: Nombre, Calle, Código Postal, colonia, Ciudad, Estado`
-        );
-      })
-      .catch((err) => console.error("Error enviando confirmación:", err));
+      "Datos del remitente confirmados"
+    );
   } else {
-    const errorMessage = `Los datos del remitente no están en el formato correcto. Por favor, ingresa los datos nuevamente siguiendo el orden indicado:
-        Nombre, Calle, Código Postal, colonia, Ciudad, Estado`;
-    client.messages
-      .create({
-        body: errorMessage,
-        from: sandboxNumber,
-        to: sender,
-      })
-      .then((message) =>
-        console.log(`Solicitando datos nuevamente: ${message.sid}`)
-      )
-      .catch((err) =>
-        console.error("Error solicitando datos nuevamente:", err)
-      );
+    sendMessage(
+      sender,
+      `Los datos del remitente no están en el formato correcto. Por favor, ingresa los datos nuevamente siguiendo el orden indicado:
+        Nombre, Calle, Código Postal, colonia, Ciudad, Estado`,
+      "Error en formato de datos del remitente"
+    );
   }
 }
 
-function crear_destinatario(sender: string, message: string) {
+function createRecipient(sender: string, message: string) {
   const datos = message.split(",").map((dato) => dato.trim());
   if (datos.length != 6) {
-    const errorMessage = `Los datos del destinatario no están en el formato correcto. Por favor, ingresa los datos nuevamente siguiendo el orden indicado:
-        Nombre, Calle, Código Postal, colonia, Ciudad, Estado`;
-    client.messages.create({
-      body: errorMessage,
-      from: sandboxNumber,
-      to: sender,
-    });
+    sendMessage(
+      sender,
+      `Los datos del destinatario no están en el formato correcto. Por favor, ingresa los datos nuevamente siguiendo el orden indicado:
+        Nombre, Calle, Código Postal, colonia, Ciudad, Estado`,
+      "Error en formato de datos del destinatario"
+    );
   } else {
     const [nombre, calle, codigoPostal, colonia, ciudad, estado] = datos;
     const destinatario: Person = {
@@ -252,11 +207,11 @@ function crear_destinatario(sender: string, message: string) {
     sesionesDeUsuario[sender].destinatario = destinatario;
 
     console.log("Datos del destinatario recibidos:", destinatario);
-    emular_post_db_general("destinatario", destinatario, "create");
+    emulatePostDb("destinatario", destinatario, "create");
 
-    client.messages
-      .create({
-        body: `Ahora proporciona la siguiente información de tus paquetes en el siguiente orden.
+    sendMessage(
+      sender,
+      `Ahora proporciona la siguiente información de tus paquetes en el siguiente orden.
         Alto, ancho, largo, peso.
         Los datos deben incluir sus unidades cm y kg.
         Para darte una cotización adecuada por favor proporciona las dimensiones y peso exactos.
@@ -265,53 +220,39 @@ function crear_destinatario(sender: string, message: string) {
         EJEMPLO Dos paquetes:
         10cm, 15cm, 15cm, 0.5kg;
         6.2cm, 12cm, 18.5cm, 5.3kg`,
-        from: sandboxNumber,
-        to: sender,
-      })
-      .then((message) => {
-        console.log(`Confirmación enviada: ${message.sid}`);
-        console.log(
-          `Mensaje enviado: Ahora proporciona la siguiente información de tus paquetes en el siguiente orden. Alto, ancho, largo, peso. Los datos deben incluir sus unidades cm y kg. Para darte una cotización adecuada por favor proporciona las dimensiones y peso exactos. De lo contrario solo podemos proporcionar una aproximación del costo y éste puede ser actualizado cuando visites la sucursal. Si es más de un paquete, separa cada paquete con un punto y coma ";". EJEMPLO Dos paquetes: 10cm, 15cm, 15cm, 0.5kg; 6.2cm, 12cm, 18.5cm, 5.3kg`
-        );
-      })
-      .catch((err) => console.error("Error enviando confirmación:", err));
+      "Datos del destinatario confirmados"
+    );
   }
 }
 
-function crear_paquetes(sender: string, message: string) {
+function createPackages(sender: string, message: string) {
   const sesionCliente = sesionesDeUsuario[sender];
 
-  // Verificar si el mensaje contiene múltiples paquetes
   const paquetes = message.includes(";")
     ? message.split(";").map((dato) => dato.trim())
-    : [message.trim()]; // Si no hay ";", se asume un solo paquete
+    : [message.trim()];
 
   console.log("Paquetes recibidos:", paquetes);
 
   let paquetesValidos = true;
 
-  // Validar cada paquete
   for (const paquete of paquetes) {
-    if (!validar_formato_paquete(paquete)) {
+    if (!validatePackageFormat(paquete)) {
       paquetesValidos = false;
       break;
     }
   }
 
   if (paquetesValidos) {
-    guardarPaquetesEnSesion(paquetes, sesionCliente);
-    // enviarConfirmacionPaquetes(paquetes, sender);
+    savePackagesInSession(paquetes, sesionCliente);
   } else {
-    solicitarReenvioPaquetes(sender);
+    requestPackageResubmission(sender);
   }
 }
 
-function guardarPaquetesEnSesion(
-  paquetes: string[],
-  sesionCliente: UserSession
-) {
+function savePackagesInSession(paquetes: string[], sesionCliente: UserSession) {
   for (const paquete of paquetes) {
-    emular_post_db_general(
+    emulatePostDb(
       "paquetes",
       {
         remitente: JSON.stringify(sesionCliente.remitente),
@@ -331,52 +272,18 @@ function guardarPaquetesEnSesion(
   });
 }
 
-function enviarConfirmacionPaquetes(paquetes: string[], sender: string) {
-  client.messages
-    .create({
-      body: `Hemos recibido los siguientes paquetes: ${JSON.stringify(
-        paquetes
-      )}\n. En un momento te proporcionaremos el costo de envío.`,
-      from: sandboxNumber,
-      to: sender,
-    })
-    .then((message) => {
-      console.log(`Mensaje de costo enviado: ${message.sid}`);
-      console.log(
-        `Mensaje enviado: Hemos recibido los siguientes paquetes: ${JSON.stringify(
-          paquetes
-        )}\n. En un momento te proporcionaremos el costo de envío.`
-      );
-    })
-    // .then((message) => {
-    // console.log(`Calculando costo de envio: ${message.sid}`);
-    // Avanzar al siguiente subpaso
-    // sesionesDeUsuario[sender].flujo.subpaso = "creando_destinatario";
-    // })
-    .catch((err) => {
-      console.error("Error solicitando datos del destinatario:", err);
-    });
-}
-
-function solicitarReenvioPaquetes(sender: string) {
-  client.messages
-    .create({
-      body: `Por favor, verifica el formato de los paquetes y envíalos nuevamente.\n
+function requestPackageResubmission(sender: string) {
+  sendMessage(
+    sender,
+    `Por favor, verifica el formato de los paquetes y envíalos nuevamente.\n
       Ejemplo de formato:\n
       10cm, 15cm, 15cm, 0.5kg\n
       6.2cm, 12cm, 18.5cm, 5.3kg`,
-      from: sandboxNumber,
-      to: sender,
-    })
-    .then((message) => {
-      console.log(`Solicitando datos nuevamente: ${message.sid}`);
-    })
-    .catch((err) => {
-      console.error("Error solicitando datos nuevamente:", err);
-    });
+    "Error en formato de paquetes"
+  );
 }
 
-function calcular_costos(sender: string) {
+function calculateCosts(sender: string) {
   const sesionCliente = sesionesDeUsuario[sender];
   if (!sesionCliente.paquetes) {
     console.log("No hay paquetes en la sesión");
@@ -388,8 +295,11 @@ function calcular_costos(sender: string) {
   const remitente = sesionCliente.remitente;
   const destinatario = sesionCliente.destinatario;
 
-  const estado_remitente = limpiarEstado(`${remitente?.estado}`);
-  const estado_destinatario = limpiarEstado(`${destinatario?.estado}`);
+  const estado_remitente = cleanStateName(`${remitente?.estado}`);
+  const estado_destinatario = cleanStateName(`${destinatario?.estado}`);
+
+  console.log("Estado del remitente:", estado_remitente);
+  console.log("Estado del destinatario:", estado_destinatario);
 
   const ZonaZipCodeRemitente: ZipCodeRange[] | undefined = ZonasZipCodeMap.get(
     `${estado_remitente}`
@@ -413,9 +323,19 @@ function calcular_costos(sender: string) {
 
   const groupRemitente: string = ZonaZipCodeRemitente[0].group;
   const groupDestinatario: string = ZonaZipCodeDestinatario[0].group;
+  console.log("Grupo del remitente:", groupRemitente);
+  console.log("Grupo del destinatario:", groupDestinatario);
 
-  const ZonaEnvio: string | undefined =
+  let ZonaEnvio: string | undefined =
     ZonasDeEnvio[groupRemitente]?.[groupDestinatario];
+
+  if (groupRemitente === groupDestinatario) {
+    console.log(
+      "Esta  tarifa no aplica para todas las ciudades, quieres ser redirigido para atencion?"
+    );
+    //FLUJO POR REALIZAR
+    ZonaEnvio = ZonaEnvio?.replace("*", "");
+  }
 
   if (!ZonaEnvio) {
     sendErrorMessage(sender);
@@ -442,75 +362,47 @@ function calcular_costos(sender: string) {
     mensaje_costo += `- Fedex día siguiente: ${costo_fedex_dia_siguiente}\n`;
   }
 
-  client.messages
-    .create({
-      body: mensaje_costo,
-      from: sandboxNumber,
-      to: sender,
-    })
-    .then((message) => {
-      console.log(`Mensaje de costo enviado: ${message.sid}`);
-      console.log(`Mensaje de costo enviado: ${message.body}`);
-    })
-    .catch((err) => {
-      console.error("Error enviando mensaje de costo:", err);
-    });
+  sendMessage(sender, mensaje_costo, "Mensaje de costo enviado");
 }
 
-// Funciones auxiliares
+// Helper functions
 function sendErrorMessage(sender: string) {
   console.error(`Enviando mensaje de error al sender: ${sender}`);
-  client.messages
-    .create({
-      body: "Oops! Algo salió mal. Por favor intenta mas tarde.",
-      from: sandboxNumber,
-      to: sender,
-    })
-    .then((message) => {
-      console.log(`Mensaje de error enviado: ${message.sid}`);
-    })
-    .catch((err) => {
-      console.error("Error enviando mensaje de error:", err);
-      console.error(`Detalles del error: ${JSON.stringify(err)}`);
-    });
+  sendMessage(
+    sender,
+    "Oops! Algo salió mal. Por favor intenta mas tarde.",
+    "Mensaje de error enviado"
+  );
 }
 
-function emular_post_db_general(
-  some_entity_name: string,
-  some_entity_data: any,
-  action: string
-) {
+function emulatePostDb(entityName: string, entityData: any, action: string) {
   console.log(
     "emulando accion",
     action,
     "en",
-    some_entity_name,
+    entityName,
     "con datos",
-    some_entity_data
+    entityData
   );
-  // New code to save data into a CSV file
-  const filePath = path.join(__dirname, "../db", `${some_entity_name}.csv`);
-  const data = Object.values(some_entity_data).join(",") + "\n"; // Convert object values to CSV format
+  const filePath = path.join(__dirname, "../db", `${entityName}.csv`);
+  const data = Object.values(entityData).join(",") + "\n";
 
   fs.appendFile(filePath, data, (err) => {
     if (err) {
-      console.error(
-        `Error guardando los datos en ${some_entity_name}.csv:`,
-        err
-      );
+      console.error(`Error guardando los datos en ${entityName}.csv:`, err);
     } else {
-      console.log(`Datos guardados en ${some_entity_name}.csv`);
+      console.log(`Datos guardados en ${entityName}.csv`);
     }
   });
 }
 
-function validar_formato_paquete(paquete: string) {
+function validatePackageFormat(paquete: string) {
   const datos = paquete.split(",").map((dato) => dato.replace(",", "").trim());
   return datos.length === 4;
 }
 
-function map_services(choise: string) {
-  switch (choise) {
+function mapServices(choice: string) {
+  switch (choice) {
     case "1":
     case "comprar":
       return "comprar";
@@ -525,7 +417,17 @@ function map_services(choise: string) {
   }
 }
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+function sendMessage(to: string, body: string, logMessage: string) {
+  client.messages
+    .create({
+      body,
+      from: sandboxNumber,
+      to,
+    })
+    .then((message) => {
+      console.log(`${logMessage}: ${message.sid}`);
+    })
+    .catch((err) => {
+      console.error(`Error enviando mensaje: ${err}`);
+    });
+}

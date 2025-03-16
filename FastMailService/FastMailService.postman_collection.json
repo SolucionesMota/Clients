@@ -1,0 +1,1069 @@
+{
+	"info": {
+		"_postman_id": "edbef65c-c6c1-4755-ab25-ea120419d9f8",
+		"name": "FastMailService",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "42497175"
+	},
+	"item": [
+		{
+			"name": "SystemUsers",
+			"item": [
+				{
+					"name": "Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Users",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"person\": \"Alejandro Mota\",\r\n  \"username\": \"AleMota\",\r\n  \"password\": \"12345\",\r\n  \"role\": [\"admin\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "chatbot",
+			"item": [
+				{
+					"name": "Cotizar",
+					"item": [
+						{
+							"name": "Iniciar",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"From\":\"whatsapp:+522282213034\",\r\n    \"Body\":\"Hola\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/chatbot",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"chatbot"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ElegirServicio",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"From\":\"whatsapp:+522282213034\",\r\n    \"Body\":\"2\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/chatbot",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"chatbot"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "CrearRemitente",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"From\":\"whatsapp:+522282213034\",\r\n    \"Body\":\"Remitente 1, CalleRem1, 64000, coloniaRem1, ciudadRem1, nuevo león\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/chatbot",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"chatbot"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "CrearDestinatario",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"From\":\"whatsapp:+522282213034\",\r\n    \"Body\":\"Destinatario 1, CalleDest1, 79001, coloniaDest1, ciudadDest1, San luis potosí\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/chatbot",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"chatbot"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "CrearPaquetes",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"From\":\"whatsapp:+522282213034\",\r\n    \"Body\":\"10cm, 20cm, 30cm, 2.58kg;18cm, 20cm, 30cm, 14.55kg;  30cm,30cm,30cm,30kg\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/chatbot",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"chatbot"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ElegirTarifa",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"From\":\"whatsapp:+522282213034\",\r\n    \"Body\":\"1\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/chatbot",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"chatbot"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ConfirmarEnvio",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"From\":\"whatsapp:+522282213034\",\r\n    \"Body\":\"2\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/chatbot",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"chatbot"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "New Request",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_URL}}/?From=%2B522282213034",
+							"host": [
+								"{{API_URL}}"
+							],
+							"path": [
+								""
+							],
+							"query": [
+								{
+									"key": "From",
+									"value": "%2B522282213034"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "API",
+			"item": [
+				{
+					"name": "Securityt",
+					"item": [
+						{
+							"name": "/register",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"username\": \"Alejandro_Mota\",\r\n    \"password\": \"hiRbdzVY8m\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/register",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"register"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/login",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"username\": \"Alejandro_Mota\",\r\n    \"password\": \"hiRbdzVY8m\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/login",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/logout",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/logout",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"logout"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Remitentes",
+					"item": [
+						{
+							"name": "Remitentes",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}/remitentes",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"remitentes"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Remitente",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}/remitentes/2282213034",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"remitentes",
+										"2282213034"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Remitente",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"_id\":\"2282213034\",\r\n    \"nombre\": \" Nuevo Remitente API\",\r\n    \"calle\": \" Nueva calle\",\r\n    \"codigoPostal\": \"91060\",\r\n    \"colonia\": \" Centro\",\r\n    \"ciudad\": \" Xalapa\",\r\n    \"estado\": \" Veracruz\",\r\n    \"celular\": \" 2284064806\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_URL}}/remitentes/",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"remitentes",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Remitente",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{API_URL}}/remitentes/0204598f4be3632d36dcce10ed006755",
+									"host": [
+										"{{API_URL}}"
+									],
+									"path": [
+										"remitentes",
+										"0204598f4be3632d36dcce10ed006755"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "/ruta-protegida",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/ruta-protegida",
+							"host": [
+								"{{API_URL}}"
+							],
+							"path": [
+								"ruta-protegida"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/",
+							"host": [
+								"{{API_URL}}"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Database",
+			"item": [
+				{
+					"name": "Authentication",
+					"item": [
+						{
+							"name": "/_session admin",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\":\"admin\",\r\n    \"password\":\"hiRbdzVY8m\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/_session",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"_session"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/_session user",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\":\"Alejandro_Mota\",\r\n    \"password\":\"hiRbdzVY8m\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/_session",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"_session"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/_session",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/_session",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"_session"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "CreateUser",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"Alejandro_Mota\",\r\n    \"password\": \"hiRbdzVY8m\",\r\n    \"roles\": [\r\n        \"system_admin\"\r\n    ],\r\n    \"type\": \"user\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/_users/org.couchdb.user:Alejandro_Mota",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"_users",
+										"org.couchdb.user:Alejandro_Mota"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "UpdateUser",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name: Alejandro_Mota\",\r\n    \"password\" : \"hiRbdzVY8m\",\r\n    \"roles\" :[\r\n        \"system_admin\"\r\n    ],\r\n    \"type\" : \"user\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/_users/org.couchdb.user:Alejandro_Mota",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"_users",
+										"org.couchdb.user:Alejandro_Mota"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "DeleteUser",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/_users/org.couchdb.user:Alejandro_Mota",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"_users",
+										"org.couchdb.user:Alejandro_Mota"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "CreateDbRole",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"admins\" : {\r\n        \"names\" : []\r\n    },\r\n    \"members\" : {\r\n        \"names\" : [],\r\n        \"roles\" : [\r\n            \"system_admin\"\r\n        ]\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/envios/_security",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"envios",
+										"_security"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Remitentes",
+					"item": [
+						{
+							"name": "/_all_docs",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{databaseUrl}}/remitentes/_all_docs",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"remitentes",
+										"_all_docs"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/remitente",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/remitentes/2282277999",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"remitentes",
+										"2282277999"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/remitente",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"nombre\": \"Remitente 2\",\r\n  \"calle\": \"CalleRem2\",\r\n  \"codigoPostal\": \"64000\",\r\n  \"colonia\": \"coloniaRem2\",\r\n  \"ciudad\": \"ciudadRem2\",\r\n  \"estado\": \"nuevo león\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/remitentes/2282277999",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"remitentes",
+										"2282277999"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Destinatarios",
+					"item": [
+						{
+							"name": "/_all_docs",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{databaseUrl}}/remitentes/_all_docs",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"remitentes",
+										"_all_docs"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/destinatarios",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/destinatarios/2282277999",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"destinatarios",
+										"2282277999"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/destinatarios",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"nombre\": \"Destinatario 1\",\r\n  \"calle\": \"CalleDest1\",\r\n  \"codigoPostal\": \"79001\",\r\n  \"colonia\": \"coloniaDest1\",\r\n  \"ciudad\": \"ciudadDest1\",\r\n  \"estado\": \"San luis potosí\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/destinatarios/2282277999",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"destinatarios",
+										"2282277999"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "envios",
+					"item": [
+						{
+							"name": "/_all_docs",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{databaseUrl}}/envios/_all_docs",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"envios",
+										"_all_docs"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/envio",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/envios/2282277999",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"envios",
+										"2282277999"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/envios",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"nombre\": \"Destinatario 1\",\r\n  \"calle\": \"CalleDest1\",\r\n  \"codigoPostal\": \"79001\",\r\n  \"colonia\": \"coloniaDest1\",\r\n  \"ciudad\": \"ciudadDest1\",\r\n  \"estado\": \"San luis potosí\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{databaseUrl}}/envios/",
+									"host": [
+										"{{databaseUrl}}"
+									],
+									"path": [
+										"envios",
+										""
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "/",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{databaseUrl}}/",
+							"host": [
+								"{{databaseUrl}}"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/_all_dbs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{databaseUrl}}/_all_dbs",
+							"host": [
+								"{{databaseUrl}}"
+							],
+							"path": [
+								"_all_dbs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/create_database",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{databaseUrl}}/remitentes",
+							"host": [
+								"{{databaseUrl}}"
+							],
+							"path": [
+								"remitentes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/_users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{databaseUrl}}/_users",
+							"host": [
+								"{{databaseUrl}}"
+							],
+							"path": [
+								"_users"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "API_URL",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "databaseUrl",
+			"value": "http://localhost:5984",
+			"type": "string"
+		}
+	]
+}

@@ -1,0 +1,40 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="0H8g0g0g0g0g0g0g0g0g0g0g0">
+    <mxGraphModel dx="1064" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" parent="1" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="FastMailService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="240" y="20" width="200" height="60" />
+        </mxCell>
+        <mxCell id="3" value="Server" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f7fa;strokeColor=#00796b;" vertex="1" parent="1">
+          <mxGeometry x="50" y="100" width="120" height="60" />
+        </mxCell>
+        <mxCell id="4" value="Chatbot Service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1bee7;strokeColor=#6a1b9a;" vertex="1" parent="1">
+          <mxGeometry x="250" y="100" width="120" height="60" />
+        </mxCell>
+        <mxCell id="5" value="Database" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#ef6c00;" vertex="1" parent="1">
+          <mxGeometry x="450" y="100" width="120" height="60" />
+        </mxCell>
+        <mxCell id="6" value="Types" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#388e3c;" vertex="1" parent="1">
+          <mxGeometry x="650" y="100" width="120" height="60" />
+        </mxCell>
+        <mxCell id="7" value="Postman Collection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1976d2;" vertex="1" parent="1">
+          <mxGeometry x="850" y="100" width="120" height="60" />
+        </mxCell>
+        <mxCell id="8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;strokeColor=#333333;" edge="1" parent="1" source="3" target="4">
+          <mxGeometry relative="1" />
+        </mxCell>
+        <mxCell id="9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;strokeColor=#333333;" edge="1" parent="1" source="4" target="5">
+          <mxGeometry relative="1" />
+        </mxCell>
+        <mxCell id="10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;strokeColor=#333333;" edge="1" parent="1" source="4" target="6">
+          <mxGeometry relative="1" />
+        </mxCell>
+        <mxCell id="11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;exitPerimeter=1;entryPerimeter=1;strokeColor=#333333;" edge="1" parent="1" source="4" target="7">
+          <mxGeometry relative="1" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
