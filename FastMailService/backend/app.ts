@@ -16,6 +16,10 @@ app.use(
   })
 );
 
+app.use("/", (req, res, next) => {
+  res.send("Hello World");
+});
+
 // Register routes
 app.use("/auth", authRoutes);
 // app.use("/remitentes", remitenteRoutes);
